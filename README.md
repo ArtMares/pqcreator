@@ -1,6 +1,6 @@
 PQCreator
 =========
-The prototype of rapid application development studio based on PQEngine - a GUI tool kit for PHP. 
+The prototype of environment for rapid application development, based on PQEngine - a GUI toolkit for PHP, provides access to the framework Qt.
 
 Usage
 -----
