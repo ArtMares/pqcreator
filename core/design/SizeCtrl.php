@@ -20,15 +20,9 @@ class SizeCtrl extends QObject {
   private $startx;
   private $starty;
   
-  private $label;
-  
   public function __construct($formarea, $object) {
     parent::__construct();
     $size = $this->size;
-    
-    $this->label = new QLabel($formarea);
-    $this->label->width=300;
-    $this->label->show();
     
     $this->lt = new QLabel($formarea);
     $this->lt->resize($size, $size);
