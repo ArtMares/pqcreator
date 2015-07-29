@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<pqenginetr lang="ru">
+	<unit id="menubar">
+		<source>File</source>
+		<tr>Файл</tr>
+	</unit>
+	<unit>
+		<source>Edit</source>
+		<tr>Правка</tr>
+	</unit>
+</pqenginetr>

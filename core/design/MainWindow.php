@@ -48,10 +48,10 @@ class Main extends QMainWindow {
     $this->mainLayout->addWidget($this->formarea);
     
     $menubar = new QMenuBar($this);
-    $filemenu = $menubar->addMenu("Файл");
-    $setsmenu = $menubar->addMenu("Правка");
+    $filemenu = $menubar->addMenu(tr("File", "menubar"));
+    $setsmenu = $menubar->addMenu(tr("Edit"));
     
-    $openAction = $filemenu->addAction("ball.png", "Открыть");
+    $openAction = $filemenu->addAction("ball.png", tr("Open"));
     connect($openAction, SIGNAL('triggered(bool)'), $this, SLOT('aaacl(bool)'));
     
     $this->setMenuBar($menubar);
