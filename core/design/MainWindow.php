@@ -199,12 +199,12 @@ class Main extends QMainWindow {
   
   public function select_object($object) {
     $this->unselect_object();
-    $this->sizeCtrl = new SizeCtrl($this->formarea, $object);
+    $this->sizeCtrl = new SizeCtrl($this->formarea, $object, $this->gridSize);
   }
   
   public function stop_drag($sender, $x, $y, $button) {
     $sender->draggable = false;
-    $this->sizeCtrl = new SizeCtrl($this->formarea, $sender);
+    $this->sizeCtrl = new SizeCtrl($this->formarea, $sender, $this->gridSize);
   }
   
   public function start_drag($sender, $x, $y, $button) {

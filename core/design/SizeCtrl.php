@@ -20,8 +20,9 @@ class SizeCtrl extends QObject {
   private $startx;
   private $starty;
   
-  public function __construct($formarea, $object) {
+  public function __construct($formarea, $object, $gridSize) {
     parent::__construct();
+    $this->gridSize = $gridSize;
     $size = $this->size;
     
     $this->lt = new QLabel($formarea);
