@@ -4,8 +4,8 @@ require_once("SizeCtrl.php");
 
 class Main extends QMainWindow {
   private $mainLayout;
-  private $leftLayout;
-  private $leftPanel;
+  private $componentsLayout;
+  private $componentsPanel;
   private $formarea;
   private $formareaLayout;
   
@@ -26,15 +26,15 @@ class Main extends QMainWindow {
     parent::__construct();
     
     $this->mainLayout = new QHBoxLayout;
-    $this->leftLayout = new QVBoxLayout;
+    $this->componentsLayout = new QVBoxLayout;
     
     $centralWidget = new QWidget();
     $centralWidget->setLayout($this->mainLayout);
     
-    $this->leftPanel = new QWidget($centralWidget);
-    $this->leftPanel->minimumWidth = 200;
-    $this->leftPanel->maximumWidth = 200;
-    $this->leftPanel->setLayout($this->leftLayout);
+    $this->componentsPanel = new QWidget($centralWidget);
+    $this->componentsPanel->minimumWidth = 200;
+    $this->componentsPanel->maximumWidth = 200;
+    $this->componentsPanel->setLayout($this->componentsLayout);
     
     $this->formarea = new QFrame($centralWidget);
     $this->formarea->frameShape = QFrame::StyledPanel;
@@ -42,9 +42,9 @@ class Main extends QMainWindow {
     
     $this->load_components();
     
-    $this->leftLayout->addSpacer(2000,2000,QSizePolicy::Preferred,QSizePolicy::Preferred);
+    $this->componentsLayout->addSpacer(2000,2000,QSizePolicy::Preferred,QSizePolicy::Preferred);
     
-    $this->mainLayout->addWidget($this->leftPanel);
+    $this->mainLayout->addWidget($this->componentsPanel);
     $this->mainLayout->addWidget($this->formarea);
     
     $menubar = new QMenuBar($this);
@@ -108,7 +108,7 @@ class Main extends QMainWindow {
     }
       
     
-    $this->leftLayout->addWidget($button);
+    $this->componentsLayout->addWidget($button);
     connect($button, SIGNAL("mousePressed(int,int,int)"), $this, SLOT("create_object(int,int,int)"));
     connect($button, SIGNAL("mouseMoved(int,int)"), $this, SLOT("move_object(int,int)"));
     connect($button, SIGNAL('mouseReleased(int,int,int)'), $this, SLOT('test_create(int,int,int)'));
