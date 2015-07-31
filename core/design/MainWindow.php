@@ -8,6 +8,8 @@ class Main extends QMainWindow {
   private $componentsPanel;
   private $formarea;
   private $formareaLayout;
+  private $propertiesLayout;
+  private $propertiesPanel;
   
   private $objHash;
   
@@ -27,18 +29,24 @@ class Main extends QMainWindow {
     
     $this->mainLayout = new QHBoxLayout;
     $this->componentsLayout = new QVBoxLayout;
+    $this->propertiesLayout = new QVBoxLayout;
     
-    $centralWidget = new QWidget();
+    $centralWidget = new QWidget;
     $centralWidget->setLayout($this->mainLayout);
     
     $this->componentsPanel = new QWidget($centralWidget);
-    $this->componentsPanel->minimumWidth = 200;
-    $this->componentsPanel->maximumWidth = 200;
+    $this->componentsPanel->minimumWidth = 180;
+    $this->componentsPanel->maximumWidth = 180;
     $this->componentsPanel->setLayout($this->componentsLayout);
     
     $this->formarea = new QFrame($centralWidget);
     $this->formarea->frameShape = QFrame::StyledPanel;
     $this->formarea->objectName = $this->formareaName;
+    
+    $this->propertiesPanel = new QWidget;
+    $this->propertiesPanel->minimumWidth = 180;
+    $this->propertiesPanel->maximumWidth = 180;
+    $this->propertiesPanel->setLayout($this->propertiesLayout);
     
     $this->load_components();
     
@@ -46,6 +54,7 @@ class Main extends QMainWindow {
     
     $this->mainLayout->addWidget($this->componentsPanel);
     $this->mainLayout->addWidget($this->formarea);
+    $this->mainLayout->addWidget($this->propertiesPanel);
     
     $menubar = new QMenuBar($this);
     $filemenu = $menubar->addMenu(tr("File", "menubar"));
@@ -89,7 +98,7 @@ class Main extends QMainWindow {
     $buttonText = $objectName;
     $r = array();
     if(is_file("$componentsPath/$component/component.php")) {
-      require_once("$componentsPath/$component/component.php");
+      require("$componentsPath/$component/component.php");
       $buttonText = $r['title'];
     }
     
@@ -200,11 +209,12 @@ class Main extends QMainWindow {
   public function select_object($object) {
     $this->unselect_object();
     $this->sizeCtrl = new SizeCtrl($this->formarea, $object, $this->gridSize);
+    $this->load_properties($object);
   }
   
   public function stop_drag($sender, $x, $y, $button) {
     $sender->draggable = false;
-    $this->sizeCtrl = new SizeCtrl($this->formarea, $sender, $this->gridSize);
+    $this->select_object($sender);
   }
   
   public function start_drag($sender, $x, $y, $button) {
@@ -235,6 +245,10 @@ class Main extends QMainWindow {
   public function delete_object($obj) {
     unset($this->objHash[$obj->objectName]);
     $obj->free();
+  }
+  
+  public function load_properties($object) {
+    $component = get_class($object);
   }
 }
 
