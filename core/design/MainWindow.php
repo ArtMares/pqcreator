@@ -6,10 +6,12 @@ class Main extends QMainWindow {
   private $mainLayout;
   private $componentsLayout;
   private $componentsPanel;
+  private $componentsDock;
   private $formarea;
   private $formareaLayout;
   private $propertiesLayout;
   private $propertiesPanel;
+  private $propertiesDock;
   
   private $objHash;
   
@@ -34,20 +36,24 @@ class Main extends QMainWindow {
     $centralWidget->setLayout($this->mainLayout);
     
     $this->componentsPanel = new QWidget($centralWidget);
+    $this->componentsPanel->width = 180;
     $this->componentsPanel->minimumWidth = 180;
-    $this->componentsPanel->maximumWidth = 180;
     $this->componentsPanel->setLayout($this->componentsLayout);
+    
+    $componentsDock = new QDockWidget($this);
+    $componentsDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    $componentsDock->setWidget($this->componentsPanel);
+    $this->addDockWidget(Qt::LeftDockWidgetArea, $componentsDock);
     
     $this->formarea = new QFrame($centralWidget);
     $this->formarea->frameShape = QFrame::StyledPanel;
     $this->formarea->objectName = $this->formareaName;
     
-    
     $this->load_components();
     
     $this->componentsLayout->addSpacer(2000,2000,QSizePolicy::Preferred,QSizePolicy::Preferred);
     
-    $this->mainLayout->addWidget($this->componentsPanel);
+    //$this->mainLayout->addWidget($this->componentsPanel);
     $this->mainLayout->addWidget($this->formarea);
     $this->create_propertiesPanel();
     
@@ -70,9 +76,14 @@ class Main extends QMainWindow {
     $this->propertiesLayout = new QVBoxLayout;
     $this->propertiesPanel = new QWidget;
     $this->propertiesPanel->minimumWidth = 180;
-    $this->propertiesPanel->maximumWidth = 180;
+    $this->propertiesPanel->width = 180;
     $this->propertiesPanel->setLayout($this->propertiesLayout);
-    $this->mainLayout->addWidget($this->propertiesPanel);
+    //$this->mainLayout->addWidget($this->propertiesPanel);
+    
+    $this->propertiesDock = new QDockWidget($this);
+    $this->propertiesDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    $this->propertiesDock->setWidget($this->propertiesPanel);
+    $this->addDockWidget(Qt::RightDockWidgetArea, $this->propertiesDock);
   }
   
   public function aaacl($sender, $b) {
@@ -200,6 +211,7 @@ class Main extends QMainWindow {
     $obj->move($x, $y);
     $obj->windowOpacity = 0.5;
     $obj->lockParentClassEvents(true);
+    $obj->defaultPropertiesLoaded = false;
     
     if($sender->defobjw !== null &&
         $sender->defobjh !== null) {
@@ -227,7 +239,7 @@ class Main extends QMainWindow {
   public function select_object($object) {
     $this->unselect_object();
     $this->sizeCtrl = new SizeCtrl($this->formarea, $object, $this->gridSize);
-    $this->load_properties($object);
+    $this->load_object_properties($object);
   }
   
   public function stop_drag($sender, $x, $y, $button) {
@@ -265,9 +277,9 @@ class Main extends QMainWindow {
     $obj->free();
   }
   
-  public function load_properties($object) {
+  public function load_object_properties($object) {
     $component = get_class($object);
-    $this->propertiesPanel->free();
+    $this->propertiesDock->free();
     $this->create_propertiesPanel();
     
     // Загружаем все свойства в массив
@@ -314,22 +326,33 @@ class Main extends QMainWindow {
         switch($property['type']) {
         case 'mixed':
           $widget = new QLineEdit;
-          if(isset($property['value'])) {
+          
+          if(isset($property['value'])
+              && !$object->defaultPropertiesLoaded) {
             $widget->text = $property['value'];
+          } else {
+            $widget->text = $object->$property['property'];
           }
+          
           if(isset($property['validator'])) {
             $widget->setRegExpValidator($property['validator']);
           }
+          
           break;
           
         case 'bool':
           $widget = new QCheckBox;
           $widget->__pq_objectName_ = $object->objectName;
           $widget->__pq_property_ = $property['property'];
-          connect($widget, SIGNAL('toggled(bool)'), $this, SLOT('set_object_property(bool)'));
-          if(isset($property['value'])) {
+          
+          if(isset($property['value'])
+              && !$object->defaultPropertiesLoaded) {
             $widget->checked = $property['value'];
+          } else {
+            $widget->checked = $object->$property['property'];
           }
+          
+          $widget->connect(SIGNAL('toggled(bool)'), $this, SLOT('set_object_property(bool)'));
           break;
         }
         
@@ -341,13 +364,14 @@ class Main extends QMainWindow {
       $this->propertiesLayout->addWidget($label);
       $this->propertiesLayout->addWidget($table);
     }
+    
+    $object->defaultPropertiesLoaded = true;
   }
   
   public function set_object_property($sender, $value) {
     $objectName = $sender->__pq_objectName_;
     $property = $sender->__pq_property_;
-    $object = c($objectName);
-    $object->$property = $value;
+    c($objectName)->$property = $value;
   }
 }
 
