@@ -29,7 +29,6 @@ class Main extends QMainWindow {
     
     $this->mainLayout = new QHBoxLayout;
     $this->componentsLayout = new QVBoxLayout;
-    $this->propertiesLayout = new QVBoxLayout;
     
     $centralWidget = new QWidget;
     $centralWidget->setLayout($this->mainLayout);
@@ -43,10 +42,6 @@ class Main extends QMainWindow {
     $this->formarea->frameShape = QFrame::StyledPanel;
     $this->formarea->objectName = $this->formareaName;
     
-    $this->propertiesPanel = new QWidget;
-    $this->propertiesPanel->minimumWidth = 180;
-    $this->propertiesPanel->maximumWidth = 180;
-    $this->propertiesPanel->setLayout($this->propertiesLayout);
     
     $this->load_components();
     
@@ -54,7 +49,7 @@ class Main extends QMainWindow {
     
     $this->mainLayout->addWidget($this->componentsPanel);
     $this->mainLayout->addWidget($this->formarea);
-    $this->mainLayout->addWidget($this->propertiesPanel);
+    $this->create_propertiesPanel();
     
     $menubar = new QMenuBar($this);
     $filemenu = $menubar->addMenu(tr("File", "menubar"));
@@ -69,6 +64,15 @@ class Main extends QMainWindow {
     $this->setCentralWidget($centralWidget);
     $this->resize(800,600);
     $this->windowTitle = "PQCreator";
+  }
+  
+  public function create_propertiesPanel() {
+    $this->propertiesLayout = new QVBoxLayout;
+    $this->propertiesPanel = new QWidget;
+    $this->propertiesPanel->minimumWidth = 180;
+    $this->propertiesPanel->maximumWidth = 180;
+    $this->propertiesPanel->setLayout($this->propertiesLayout);
+    $this->mainLayout->addWidget($this->propertiesPanel);
   }
   
   public function aaacl($sender, $b) {
@@ -99,8 +103,21 @@ class Main extends QMainWindow {
     $r = array();
     if(is_file("$componentsPath/$component/component.php")) {
       require("$componentsPath/$component/component.php");
-      $buttonText = $r['title'];
     }
+    
+    if(!isset($r['group'])
+        || $r['group'] == 'NoVisual') {
+      return;
+    }
+    
+    if(isset($r['parent'])
+        && !empty(trim($r['parent']))) {
+      $parentClass = $r['parent'];
+    } else {
+      $parentClass = null;
+    }
+    
+    $buttonText = $r['title'];
     
     $button = new QPushButton();
     $button->objectName = $objectName;
@@ -110,12 +127,12 @@ class Main extends QMainWindow {
     $button->icon = "$componentsPath/$component/icon.png";
     $button->flat = true;
     $button->draggable = true;
+    $button->parentClass = $parentClass;
     
     if(isset($r['defobjw']) && isset($r['defobjh'])) {
       $button->defobjw = $r['defobjw'];
       $button->defobjh = $r['defobjh'];
     }
-      
     
     $this->componentsLayout->addWidget($button);
     connect($button, SIGNAL("mousePressed(int,int,int)"), $this, SLOT("create_object(int,int,int)"));
@@ -159,7 +176,7 @@ class Main extends QMainWindow {
     $type = explode("_", $sender->objectName)[1];
     
     $index = 0;
-    $objectName = "$type";
+    $objectName = strtolower($type);
     if(isset($this->objHash[$objectName])) {
       $index = 1;
       while(isset($this->objHash["${objectName}_$index"])) {
@@ -178,6 +195,7 @@ class Main extends QMainWindow {
     $obj->setWindowFlags(Qt::Tool|Qt::WindowStaysOnTopHint|Qt::FramelessWindowHint);
     $obj->setAttribute(Qt::WA_TranslucentBackground);
     $obj->text = $objectName;
+    $obj->parentClass = $sender->parentClass;
     
     $obj->move($x, $y);
     $obj->windowOpacity = 0.5;
@@ -185,7 +203,7 @@ class Main extends QMainWindow {
     
     if($sender->defobjw !== null &&
         $sender->defobjh !== null) {
-      $obj->resize($sender->defobjw,$sender->defobjh);
+      $obj->resize($sender->defobjw, $sender->defobjh);
     }
     
     $obj->connect(SIGNAL('mousePressed(int,int,int)'), $this, SLOT('start_drag(int,int,int)'));
@@ -249,6 +267,84 @@ class Main extends QMainWindow {
   
   public function load_properties($object) {
     $component = get_class($object);
+    $this->propertiesPanel->free();
+    $this->create_propertiesPanel();
+    
+    // Загружаем все свойства в массив
+    $properties = array();
+    while($component != null) {
+      $componentPath = $this->componentsPath . "/$component/component.php";
+      $propertiesPath = $this->componentsPath . "/$component/properties.php";
+      
+      $r = array();
+      if(file_exists($propertiesPath)
+          && is_file($propertiesPath)) {
+        require($propertiesPath);
+        
+        if(count($r) > 0) {
+          $properties[$component] = $r;
+        }
+      }
+      
+      $component = null;
+      require($componentPath);
+      if(isset($r['parent'])
+          && !empty(trim($r['parent']))) {
+        $component = $r['parent'];
+      }
+    }
+    
+    // Отображаем все свойства на панели
+    foreach($properties as $c => $p) {
+      $label = new QLabel($this->propertiesPanel);
+      $label->text = $c;
+      
+      $table = new QTableWidget($this->propertiesPanel);
+      $table->addColumns(2);
+      $table->setHorizontalHeaderText(0, tr('Property'));
+      $table->setHorizontalHeaderText(1, tr('Value'));
+      $table->verticalHeaderVisible = false;
+    
+      foreach($p as $property) {
+        $row = $table->rowCount();
+        $table->addRow();
+        $table->setTextAt($row, 0, $property['title']);
+        $widget = null;
+        
+        switch($property['type']) {
+        case 'mixed':
+          $widget = new QLineEdit;
+          if(isset($property['value'])) {
+            $widget->text = $property['value'];
+          }
+          break;
+          
+        case 'bool':
+          $widget = new QCheckBox;
+          $widget->__pq_objectName_ = $object->objectName;
+          $widget->__pq_property_ = $property['property'];
+          connect($widget, SIGNAL('toggled(bool)'), $this, SLOT('set_object_property(bool)'));
+          if(isset($property['value'])) {
+            $widget->checked = $property['value'];
+          }
+          break;
+        }
+        
+        if($widget != null) {
+          $table->setCellWidget($row, 1, $widget);
+        }
+      }
+      
+      $this->propertiesLayout->addWidget($label);
+      $this->propertiesLayout->addWidget($table);
+    }
+  }
+  
+  public function set_object_property($sender, $value) {
+    $objectName = $sender->__pq_objectName_;
+    $property = $sender->__pq_property_;
+    $object = c($objectName);
+    $object->$property = $value;
   }
 }
 
