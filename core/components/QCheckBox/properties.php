@@ -25,7 +25,7 @@ $r[] = array(
               'title'         => tr('Auto exclusive'),
               'property'      => 'autoExclusive',
               'type'          => 'bool',
-              'value'         => true
+              'value'         => false
               );
               
 $r[] = array(
