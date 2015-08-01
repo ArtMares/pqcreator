@@ -35,25 +35,30 @@ class Main extends QMainWindow {
     $centralWidget = new QWidget;
     $centralWidget->setLayout($this->mainLayout);
     
+    
     $this->componentsPanel = new QWidget($centralWidget);
     $this->componentsPanel->width = 180;
     $this->componentsPanel->minimumWidth = 180;
     $this->componentsPanel->setLayout($this->componentsLayout);
     
-    $componentsDock = new QDockWidget($this);
-    $componentsDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    $componentsDock->setWidget($this->componentsPanel);
-    $this->addDockWidget(Qt::LeftDockWidgetArea, $componentsDock);
+    $this->componentsDock = new QDockWidget($this);
+    $this->componentsDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    $this->componentsDock->setWidget($this->componentsPanel);
+    $this->componentsDock->width = 180;
+    $this->componentsDock->minimumWidth = 180;
+    $this->addDockWidget(Qt::LeftDockWidgetArea, $this->componentsDock);
+    
     
     $this->formarea = new QFrame($centralWidget);
     $this->formarea->frameShape = QFrame::StyledPanel;
     $this->formarea->objectName = $this->formareaName;
+    $this->formarea->width = 800;
+    $this->formarea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
     $this->load_components();
     
-    $this->componentsLayout->addSpacer(2000,2000,QSizePolicy::Preferred,QSizePolicy::Preferred);
+    $this->componentsLayout->addSpacer(0,5000,QSizePolicy::Preferred,QSizePolicy::Expanding);
     
-    //$this->mainLayout->addWidget($this->componentsPanel);
     $this->mainLayout->addWidget($this->formarea);
     $this->create_propertiesPanel();
     
@@ -78,7 +83,6 @@ class Main extends QMainWindow {
     $this->propertiesPanel->minimumWidth = 180;
     $this->propertiesPanel->width = 180;
     $this->propertiesPanel->setLayout($this->propertiesLayout);
-    //$this->mainLayout->addWidget($this->propertiesPanel);
     
     $this->propertiesDock = new QDockWidget($this);
     $this->propertiesDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
@@ -130,7 +134,7 @@ class Main extends QMainWindow {
     
     $buttonText = $r['title'];
     
-    $button = new QPushButton();
+    $button = new QPushButton($this->componentsPanel);
     $button->objectName = $objectName;
     $button->text = $buttonText;
     $button->styleSheet = "text-align: left";
@@ -146,10 +150,57 @@ class Main extends QMainWindow {
     }
     
     $this->componentsLayout->addWidget($button);
-    connect($button, SIGNAL("mousePressed(int,int,int)"), $this, SLOT("create_object(int,int,int)"));
-    connect($button, SIGNAL("mouseMoved(int,int)"), $this, SLOT("move_object(int,int)"));
-    connect($button, SIGNAL('mouseReleased(int,int,int)'), $this, SLOT('test_create(int,int,int)'));
+    $button->connect(SIGNAL("mousePressed(int,int,int)"), $this, SLOT("create_object(int,int,int)"));
+    $button->connect(SIGNAL("mouseMoved(int,int)"), $this, SLOT("move_object(int,int)"));
+    $button->connect(SIGNAL('mouseReleased(int,int,int)'), $this, SLOT('test_create(int,int,int)'));
     $button->show();
+  }
+  
+  public function create_object($sender, $x, $y, $button) {
+    $type = explode("_", $sender->objectName)[1];
+    
+    $index = 0;
+    $objectName = strtolower($type);
+    if(isset($this->objHash[$objectName])) {
+      $index = 1;
+      while(isset($this->objHash["${objectName}_$index"])) {
+        $index++;
+      }
+      $objectName = "${objectName}_$index";
+    }
+    
+    $this->startdragx = 0;
+    $this->startdragy = 0;
+    
+    $this->unselect_object();
+    
+    $obj = new $type;
+    $obj->objectName = $objectName;
+    $obj->setWindowFlags(Qt::Tool|Qt::WindowStaysOnTopHint|Qt::FramelessWindowHint);
+    $obj->setAttribute(Qt::WA_TranslucentBackground);
+    $obj->text = $objectName;
+    $obj->parentClass = $sender->parentClass;
+    $obj->parentClass = $sender->parentClass;
+    
+    $obj->move($x, $y);
+    $obj->windowOpacity = 0.5;
+    $obj->lockParentClassEvents(true);
+    $obj->defaultPropertiesLoaded = false;
+    
+    if($sender->defobjw !== null &&
+        $sender->defobjh !== null) {
+      $obj->resize($sender->defobjw, $sender->defobjh);
+    }
+    
+    $obj->connect(SIGNAL('mousePressed(int,int,int)'), $this, SLOT('start_drag(int,int,int)'));
+    $obj->connect(SIGNAL('doubleClicked(int,int,int)'), $this, SLOT('unselect_object(int,int,int)'));
+    $obj->connect(SIGNAL('mouseReleased(int,int,int)'), $this, SLOT('stop_drag(int,int,int)'));
+    $obj->connect(SIGNAL('mouseMoved(int,int)'), $this, SLOT('move_object(int,int)'));
+    
+    $obj->show();
+    
+    $this->lastEditedObject = $obj;
+    $this->objHash[$objectName] = $index;
   }
   
   public function test_create($sender, $x, $y, $button) {
@@ -181,52 +232,6 @@ class Main extends QMainWindow {
     
     $this->lastEditedObject = null;
     $this->delete_object($obj);
-  }
-  
-  public function create_object($sender, $x, $y, $button) {
-    $type = explode("_", $sender->objectName)[1];
-    
-    $index = 0;
-    $objectName = strtolower($type);
-    if(isset($this->objHash[$objectName])) {
-      $index = 1;
-      while(isset($this->objHash["${objectName}_$index"])) {
-        $index++;
-      }
-      $objectName = "${objectName}_$index";
-    }
-    
-    $this->startdragx = 0;
-    $this->startdragy = 0;
-    
-    $this->unselect_object();
-    
-    $obj = new $type();
-    $obj->objectName = $objectName;
-    $obj->setWindowFlags(Qt::Tool|Qt::WindowStaysOnTopHint|Qt::FramelessWindowHint);
-    $obj->setAttribute(Qt::WA_TranslucentBackground);
-    $obj->text = $objectName;
-    $obj->parentClass = $sender->parentClass;
-    
-    $obj->move($x, $y);
-    $obj->windowOpacity = 0.5;
-    $obj->lockParentClassEvents(true);
-    $obj->defaultPropertiesLoaded = false;
-    
-    if($sender->defobjw !== null &&
-        $sender->defobjh !== null) {
-      $obj->resize($sender->defobjw, $sender->defobjh);
-    }
-    
-    $obj->connect(SIGNAL('mousePressed(int,int,int)'), $this, SLOT('start_drag(int,int,int)'));
-    $obj->connect(SIGNAL('doubleClicked(int,int,int)'), $this, SLOT('unselect_object(int,int,int)'));
-    $obj->connect(SIGNAL('mouseReleased(int,int,int)'), $this, SLOT('stop_drag(int,int,int)'));
-    $obj->connect(SIGNAL('mouseMoved(int,int)'), $this, SLOT('move_object(int,int)'));
-    
-    $obj->show();
-    
-    $this->lastEditedObject = $obj;
-    $this->objHash[$objectName] = $index;
   }
   
   public function unselect_object($sender=0,$x=0,$y=0,$btn=0) {
@@ -338,12 +343,11 @@ class Main extends QMainWindow {
             $widget->setRegExpValidator($property['validator']);
           }
           
+          $widget->connect(SIGNAL('textChanged(QString)'), $this, SLOT('set_object_property(QString)'));
           break;
           
         case 'bool':
           $widget = new QCheckBox;
-          $widget->__pq_objectName_ = $object->objectName;
-          $widget->__pq_property_ = $property['property'];
           
           if(isset($property['value'])
               && !$object->defaultPropertiesLoaded) {
@@ -357,6 +361,8 @@ class Main extends QMainWindow {
         }
         
         if($widget != null) {
+          $widget->__pq_objectName_ = $object->objectName;
+          $widget->__pq_property_ = $property['property'];
           $table->setCellWidget($row, 1, $widget);
         }
       }
