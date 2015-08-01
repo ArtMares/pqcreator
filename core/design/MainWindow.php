@@ -231,7 +231,7 @@ class Main extends QMainWindow {
   public function test_create($sender, $x, $y, $button) {
     $wx = $x - $this->geometry()["x"];
     $wy = $y - $this->geometry()["y"];
-    $widget = $this->centralWidget->widgetAt($wx, $wy);
+    $widget = $this->widgetAt($wx, $wy);
     
     $obj = $this->lastEditedObject;
     
@@ -241,12 +241,13 @@ class Main extends QMainWindow {
       $fax = $wx - $this->centralWidget->geometry()["x"];
       $fay = $wy - $this->centralWidget->geometry()["y"];
       
-      
-      while($parent->parent != NULL) {
+      while($parent != NULL) {
         if($parent->objectName != $this->formareaName) {
-          $parent = $parent->parent;
-          $fax -= $parent->x;
-          $fay -= $parent->y;
+          $parent = $parent->getParent();
+          if($parent != NULL) {
+            $fax -= $parent->x;
+            $fay -= $parent->y;
+          }
         } else {
           $parentClass = get_class($widget);
           
@@ -256,7 +257,6 @@ class Main extends QMainWindow {
             $widget = $widget->parent;
             $parentClass = get_class($widget);
           }
-          
           
           $fax -= $widget->x;
           $fay -= $widget->y;
