@@ -3,6 +3,8 @@
 require_once("SizeCtrl.php");
 
 class Main extends QMainWindow {
+  private $centralWidget;
+  
   private $mainLayout;
   private $componentsLayout;
   private $componentsPanel;
@@ -14,6 +16,7 @@ class Main extends QMainWindow {
   private $propertiesDock;
   
   private $objHash;
+  private $objectList;
   
   private $formareaName = "___pq_creator__formarea_";
   
@@ -32,33 +35,16 @@ class Main extends QMainWindow {
     $this->mainLayout = new QHBoxLayout;
     $this->componentsLayout = new QVBoxLayout;
     
-    $centralWidget = new QWidget;
-    $centralWidget->setLayout($this->mainLayout);
+    $this->centralWidget = new QWidget;
+    $this->centralWidget->setLayout($this->mainLayout);
     
-    
-    $this->componentsPanel = new QWidget($centralWidget);
-    $this->componentsPanel->width = 180;
-    $this->componentsPanel->minimumWidth = 180;
-    $this->componentsPanel->setLayout($this->componentsLayout);
-    
-    $this->componentsDock = new QDockWidget($this);
-    $this->componentsDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    $this->componentsDock->setWidget($this->componentsPanel);
-    $this->componentsDock->width = 180;
-    $this->componentsDock->minimumWidth = 180;
-    $this->addDockWidget(Qt::LeftDockWidgetArea, $this->componentsDock);
-    
-    
-    $this->formarea = new QFrame($centralWidget);
+    $this->formarea = new QFrame($this->centralWidget);
     $this->formarea->frameShape = QFrame::StyledPanel;
     $this->formarea->objectName = $this->formareaName;
     $this->formarea->width = 800;
     $this->formarea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
-    $this->load_components();
-    
-    $this->componentsLayout->addSpacer(0,5000,QSizePolicy::Preferred,QSizePolicy::Expanding);
-    
+    $this->create_componentsPanel();
     $this->mainLayout->addWidget($this->formarea);
     $this->create_propertiesPanel();
     
@@ -72,9 +58,37 @@ class Main extends QMainWindow {
     $this->setMenuBar($menubar);
     
     $this->objHash = array();
-    $this->setCentralWidget($centralWidget);
+    $this->setCentralWidget($this->centralWidget);
     $this->resize(800,600);
     $this->windowTitle = "PQCreator";
+  }
+  
+  public function create_componentsPanel() {
+  
+  
+    $this->componentsPanel = new QWidget;
+    $this->componentsPanel->width = 180;
+    $this->componentsPanel->minimumWidth = 180;
+    $this->componentsPanel->setLayout($this->componentsLayout);
+    
+    $this->objectList = new QComboBox($this->componentsPanel);
+    $this->componentsLayout->addWidget($this->objectList);
+    $this->objectList->connect(SIGNAL('currentIndexChanged(int)'), $this, SLOT('select_object_by_list_index(int)'));
+    
+    $this->componentsDock = new QDockWidget($this);
+    $this->componentsDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    $this->componentsDock->setWidget($this->componentsPanel);
+    $this->componentsDock->width = 180;
+    $this->componentsDock->minimumWidth = 180;
+    $this->addDockWidget(Qt::LeftDockWidgetArea, $this->componentsDock);
+    
+    $this->load_components();
+    
+    $this->componentsLayout->addSpacer(0,5000,QSizePolicy::Preferred,QSizePolicy::Expanding);
+  }
+  
+  public function select_object_by_list_index($sender, $index) {
+    $this->select_object( c($this->objectList->itemText($index)) );
   }
   
   public function create_propertiesPanel() {
@@ -196,11 +210,19 @@ class Main extends QMainWindow {
     $obj->connect(SIGNAL('doubleClicked(int,int,int)'), $this, SLOT('unselect_object(int,int,int)'));
     $obj->connect(SIGNAL('mouseReleased(int,int,int)'), $this, SLOT('stop_drag(int,int,int)'));
     $obj->connect(SIGNAL('mouseMoved(int,int)'), $this, SLOT('move_object(int,int)'));
+    $obj->connect(SIGNAL('keyPressed(int,QString)'), $this, SLOT('object_key_event(int,QString)'));
     
     $obj->show();
     
     $this->lastEditedObject = $obj;
     $this->objHash[$objectName] = $index;
+  }
+  
+  public function object_key_event($sender, $key, $text) {
+    if( $key == 16777223 ) { // DEL
+      $this->unselect_object();
+      $this->delete_object($sender);
+    }
   }
   
   public function test_create($sender, $x, $y, $button) {
@@ -244,6 +266,11 @@ class Main extends QMainWindow {
           $obj->show();
           $this->select_object($obj);
           
+          $component = get_class($obj);
+          $icon = $this->componentsPath . "/$component/icon.png";
+          $this->objectList->addItem($obj->objectName, $icon);
+          $this->objectList->currentIndex = $this->objectList->count() - 1;
+          
           return;
         }
       }
@@ -266,6 +293,8 @@ class Main extends QMainWindow {
     $this->unselect_object();
     $this->sizeCtrl = new SizeCtrl($object->parent, $object, $this->gridSize);
     $this->load_object_properties($object);
+    $object->setFocus();
+    $this->objectList->currentText = $object->objectName;
   }
   
   public function stop_drag($sender, $x, $y, $button) {
@@ -298,9 +327,15 @@ class Main extends QMainWindow {
     }
   }
   
-  public function delete_object($obj) {
-    unset($this->objHash[$obj->objectName]);
-    $obj->free();
+  public function delete_object($object) {
+    $childObjects = $object->getChildObjects();
+    foreach($childObjects as $childObject) {
+      unset($this->objHash[$childObject->objectName]);
+    }
+    
+    $this->objectList->removeItem( $this->objectList->itemIndex($object->objectName) );
+    unset($this->objHash[$object->objectName]);
+    $object->free();
   }
   
   public function load_object_properties($object) {
@@ -398,7 +433,18 @@ class Main extends QMainWindow {
   public function set_object_property($sender, $value) {
     $objectName = $sender->__pq_objectName_;
     $property = $sender->__pq_property_;
-    c($objectName)->$property = $value;
+    $object = c($objectName);
+    
+    if($property == "objectName") {
+      $index = $this->objHash[$object->objectName];
+      
+      $this->objectList->setItemText( $this->objectList->itemIndex($object->objectName), $value );
+      unset($this->objHash[$object->objectName]);
+      $this->objHash[$value] = $index;
+      $sender->__pq_objectName_ = $value;
+    }
+    
+    $object->$property = $value;
   }
 }
 
