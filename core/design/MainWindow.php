@@ -211,22 +211,41 @@ class Main extends QMainWindow {
     $obj = $this->lastEditedObject;
     
     if($widget != NULL) {
-      if($widget->objectName == $this->formareaName) {
-        $fax = $wx - $this->centralWidget->geometry()["x"] - $this->formarea->x;
-        $fay = $wy - $this->centralWidget->geometry()["y"] - $this->formarea->y;
-        
-        $obj->windowOpacity = 1;
-        $obj->setParent($this->formarea);
-        
-        $newx = floor( $fax / $this->gridSize ) * $this->gridSize;
-        $newy = floor( $fay / $this->gridSize ) * $this->gridSize;
-        
-        $obj->move($newx, $newy);
-        $obj->isDynObject = true;
-        $obj->show();
-        $this->select_object($obj);
-        
-        return;
+      $parent = $widget;
+      
+      $fax = $wx - $this->centralWidget->geometry()["x"];
+      $fay = $wy - $this->centralWidget->geometry()["y"];
+      while($parent->parent != NULL) {
+        if($parent->objectName != $this->formareaName) {
+          $parent = $parent->parent;
+          $fax -= $parent->x;
+          $fay -= $parent->y;
+        } else {
+          $parentClass = get_class($widget);
+          
+          while($parentClass != 'QWidget'
+                  && $parentClass != 'QFrame'
+                  && $widget->parent != NULL) {
+            $widget = $widget->parent;
+            $parentClass = get_class($widget);
+          }
+          
+          $fax -= $widget->x;
+          $fay -= $widget->y;
+          
+          $obj->windowOpacity = 1;
+          $obj->parent = $widget;
+          
+          $newx = floor( $fax / $this->gridSize ) * $this->gridSize;
+          $newy = floor( $fay / $this->gridSize ) * $this->gridSize;
+          
+          $obj->move($newx, $newy);
+          $obj->isDynObject = true;
+          $obj->show();
+          $this->select_object($obj);
+          
+          return;
+        }
       }
     }
     
@@ -236,14 +255,16 @@ class Main extends QMainWindow {
   
   public function unselect_object($sender=0,$x=0,$y=0,$btn=0) {
     if($this->sizeCtrl != null
-        && is_object($this->sizeCtrl))
+        && is_object($this->sizeCtrl)) {
       $this->sizeCtrl->__destruct();
+    }
+    
     $this->sizeCtrl = null;
   }
   
   public function select_object($object) {
     $this->unselect_object();
-    $this->sizeCtrl = new SizeCtrl($this->formarea, $object, $this->gridSize);
+    $this->sizeCtrl = new SizeCtrl($object->parent, $object, $this->gridSize);
     $this->load_object_properties($object);
   }
   

@@ -20,6 +20,11 @@ class SizeCtrl extends QObject {
   private $startx;
   private $starty;
   
+  private $preWidth;
+  private $preHeight;
+  private $preX;
+  private $preY;
+  
   public function __construct($formarea, $object, $gridSize) {
     parent::__construct();
     $this->gridSize = $gridSize;
@@ -109,16 +114,22 @@ class SizeCtrl extends QObject {
   public function make_movable($sel) {
     connect($sel, SIGNAL('mousePressed(int,int,int)'), $this, SLOT('start_resize(int,int,int)'));
     connect($sel, SIGNAL('mouseMoved(int,int)'), $this, SLOT('resize(int,int)'));
+    $sel->lockParentClassEvents(true);
   }
   
   public function start_resize($sender, $x, $y, $button) {
-    $this->startx = $x - $sender->x;
-    $this->starty = $y - $sender->y;
+    $this->startx = &$x;
+    $this->starty = &$y;
+    $this->preWidth = $this->selobj->width;
+    $this->preHeight = $this->selobj->height;
+    $this->preX = $this->selobj->x;
+    $this->preY = $this->selobj->y;
   }
   
   public function resize($sender, $x, $y) {
     $newx = $x - $this->startx;
     $newy = $y - $this->starty;
+    
     $cursor = $sender->cursor;
     $selname = $sender->objectName;
     if($cursor == Qt::SizeHorCursor
@@ -128,21 +139,20 @@ class SizeCtrl extends QObject {
       if($selname == "___pq_creator__lm_"
           || $selname == "___pq_creator__lt_"
           || $selname == "___pq_creator__lb_") {
-        $startx = $this->selobj->x;
-        $dx = $newx + $this->size/2;
-        $this->selobj->x = $dx;
-        $this->selobj->width += $startx - $dx;
+        $this->preX += $newx;
+        if(abs($this->selobj->x - $this->preX) >= $this->gridSize) {
+          $newObjX = floor( $this->preX / $this->gridSize ) * $this->gridSize;
+          $this->selobj->width += $this->selobj->x - $newObjX;
+          $this->selobj->x = $newObjX;
+        }
       }
       else if($selname == "___pq_creator__rm_"
           || $selname == "___pq_creator__rt_"
           || $selname == "___pq_creator__rb_") {
-          $neww = $this->selobj->width + floor( ($newx - $sender->x) / $this->gridSize ) * $this->gridSize;
-          if($neww <= 0) {
-            $neww = 0;
-            $newx = $this->selobj->x - $this->size/2;
-          }
-          
-          $this->selobj->width = $neww;
+        $this->preWidth += $newx;
+        if(abs($this->selobj->width - $this->preWidth) >= $this->gridSize) {
+          $this->selobj->width = floor( $this->preWidth / $this->gridSize ) * $this->gridSize;
+        }
       }
     }
     
@@ -153,23 +163,25 @@ class SizeCtrl extends QObject {
       if($selname == "___pq_creator__tm_"
           || $selname == "___pq_creator__lt_"
           || $selname == "___pq_creator__rt_") {
-        $starty = $this->selobj->y;
-        $dy = $newy + $this->size/2;
-        $this->selobj->y = $dy;
-        $this->selobj->height += $starty - $dy;
+        $this->preY += $newy;
+        if(abs($this->selobj->y - $this->preY) >= $this->gridSize) {
+          $newObjY = floor( $this->preY / $this->gridSize ) * $this->gridSize;
+          $this->selobj->height += $this->selobj->y - $newObjY;
+          $this->selobj->y = $newObjY;
+        }
       }
       else if($selname == "___pq_creator__bm_"
           || $selname == "___pq_creator__lb_"
           || $selname == "___pq_creator__rb_") {
-        $newh = $this->selobj->height + floor( ($newy - $sender->y) / $this->gridSize ) * $this->gridSize;
-        if($newh <= 0) {
-          $newh = 0;
-          $newy = $this->selobj->y - $this->size/2;
+        $this->preHeight += $newy;
+        if(abs($this->selobj->height - $this->preHeight) >= $this->gridSize) {
+          $this->selobj->height = floor( $this->preHeight / $this->gridSize ) * $this->gridSize;
         }
-        
-        $this->selobj->height = $newh;
       }
     }
+    
+    $this->startx = &$x;
+    $this->starty = &$y;
     
     $this->updateSels();
   }
