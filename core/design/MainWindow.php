@@ -64,8 +64,6 @@ class Main extends QMainWindow {
   }
   
   public function create_componentsPanel() {
-  
-  
     $this->componentsPanel = new QWidget;
     $this->componentsPanel->width = 180;
     $this->componentsPanel->minimumWidth = 180;
@@ -219,7 +217,7 @@ class Main extends QMainWindow {
   }
   
   public function object_key_event($sender, $key, $text) {
-    if( $key == 16777223 ) { // DEL
+    if( $key == 16777223 ) { // Delete button
       $this->unselect_object();
       $this->delete_object($sender);
     }
@@ -366,6 +364,7 @@ class Main extends QMainWindow {
         $component = $r['parent'];
       }
     }
+    
     
     // Отображаем все свойства на панели
     foreach($properties as $c => $p) {
