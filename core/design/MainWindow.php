@@ -317,6 +317,9 @@ class Main extends QMainWindow {
           if(isset($property['value'])) {
             $widget->text = $property['value'];
           }
+          if(isset($property['validator'])) {
+            $widget->setRegExpValidator($property['validator']);
+          }
           break;
           
         case 'bool':
