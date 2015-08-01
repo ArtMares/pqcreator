@@ -86,7 +86,10 @@ class Main extends QMainWindow {
   }
   
   public function select_object_by_list_index($sender, $index) {
-    $this->select_object( c($this->objectList->itemText($index)) );
+    if($index == -1) return;
+    $object = c($this->objectList->itemText($index));
+    if( $object == NULL) return;
+    $this->select_object( $object );
   }
   
   public function create_propertiesPanel() {
@@ -208,7 +211,7 @@ class Main extends QMainWindow {
     $obj->connect(SIGNAL('doubleClicked(int,int,int)'), $this, SLOT('unselect_object(int,int,int)'));
     $obj->connect(SIGNAL('mouseReleased(int,int,int)'), $this, SLOT('stop_drag(int,int,int)'));
     $obj->connect(SIGNAL('mouseMoved(int,int)'), $this, SLOT('move_object(int,int)'));
-    $obj->connect(SIGNAL('keyPressed(int,QString)'), $this, SLOT('object_key_event(int,QString)'));
+    $obj->connect(SIGNAL('keyReleased(int,QString)'), $this, SLOT('object_key_event(int,QString)'));
     
     $obj->show();
     
@@ -220,6 +223,8 @@ class Main extends QMainWindow {
     if( $key == 16777223 ) { // Delete button
       $this->unselect_object();
       $this->delete_object($sender);
+      $this->propertiesDock->free();
+      $this->create_propertiesPanel();
     }
   }
   
@@ -235,6 +240,8 @@ class Main extends QMainWindow {
       
       $fax = $wx - $this->centralWidget->geometry()["x"];
       $fay = $wy - $this->centralWidget->geometry()["y"];
+      
+      
       while($parent->parent != NULL) {
         if($parent->objectName != $this->formareaName) {
           $parent = $parent->parent;
@@ -249,6 +256,7 @@ class Main extends QMainWindow {
             $widget = $widget->parent;
             $parentClass = get_class($widget);
           }
+          
           
           $fax -= $widget->x;
           $fay -= $widget->y;
@@ -291,8 +299,8 @@ class Main extends QMainWindow {
     $this->unselect_object();
     $this->sizeCtrl = new SizeCtrl($object->parent, $object, $this->gridSize);
     $this->load_object_properties($object);
+    $this->objectList->setCurrentText( $object->objectName );
     $object->setFocus();
-    $this->objectList->currentText = $object->objectName;
   }
   
   public function stop_drag($sender, $x, $y, $button) {
@@ -331,8 +339,9 @@ class Main extends QMainWindow {
       unset($this->objHash[$childObject->objectName]);
     }
     
-    $this->objectList->removeItem( $this->objectList->itemIndex($object->objectName) );
-    unset($this->objHash[$object->objectName]);
+    $objectName = $object->objectName;
+    unset($this->objHash[$objectName]);
+    $this->objectList->removeItem( $this->objectList->itemIndex($objectName) );
     $object->free();
   }
   
