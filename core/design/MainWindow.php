@@ -2,6 +2,45 @@
 
 require_once("SizeCtrl.php");
 
+class PQTabWidget extends QWidget {
+  private $stack;
+  private $tabbar;
+  private $layout;
+  
+  public function __construct($parent = 0) {
+    if($parent == 0) parent::__construct();
+    else parent::__construct($parent);
+    
+    
+    $this->layout = new QVBoxLayout;
+    $this->layout->spacing = 0;
+    
+    $this->stack = new QStackedWidget($this);
+    $this->stack->lineWidth = 0;
+    $this->stack->resize(200,200);
+    $this->stack->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred, QSizePolicy::TabWidget);
+    $this->stack->styleSheet = 'QStackedWidget{background-color: white;margin-top:-2px;}';
+    $this->stack->setFrameShape(QFrame::StyledPanel);
+    $this->stack->objectName = '___pq_creator__pqtabwidget_stack_';
+    
+    $this->tabbar = new QTabBar($this);
+    $this->tabbar->expanding = false;
+    
+    $this->setLayout($this->layout);
+    $this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding, QSizePolicy::TabWidget);
+    
+    $this->layout->addWidget($this->tabbar);
+    $this->layout->addWidget($this->stack);
+  }
+  
+  public function addTab($widget, $text) {
+    $this->tabbar->addTab($text);
+    $this->stack->addWidget($widget);
+    $widget->setParent($this->stack);
+    $parent = $widget->parent;
+  }
+}
+
 class Main extends QMainWindow {
   private $centralWidget;
   
@@ -38,11 +77,10 @@ class Main extends QMainWindow {
     $this->centralWidget = new QWidget;
     $this->centralWidget->setLayout($this->mainLayout);
     
-    $this->formarea = new QFrame($this->centralWidget);
-    $this->formarea->frameShape = QFrame::StyledPanel;
+    $this->formarea = new PQTabWidget;
+    $this->formarea->objectName = '___pq_creator__pqtabwidget_';
+    $this->formarea->addTab(new QWidget, "Form 1");
     $this->formarea->objectName = $this->formareaName;
-    $this->formarea->width = 800;
-    $this->formarea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
     $this->create_componentsPanel();
     $this->mainLayout->addWidget($this->formarea);
@@ -52,7 +90,7 @@ class Main extends QMainWindow {
     $filemenu = $menubar->addMenu(tr("File", "menubar"));
     $setsmenu = $menubar->addMenu(tr("Edit"));
     
-    $openAction = $filemenu->addAction("ball.png", tr("Open"));
+    $openAction = $filemenu->addAction(tr("Open"));
     connect($openAction, SIGNAL('triggered(bool)'), $this, SLOT('aaacl(bool)'));
     
     $this->setMenuBar($menubar);
@@ -61,6 +99,10 @@ class Main extends QMainWindow {
     $this->setCentralWidget($this->centralWidget);
     $this->resize(800,600);
     $this->windowTitle = "PQCreator";
+  }
+  
+  public function tabCloseRequested($sender, $index) {
+    echo "tabCloseRequested $index";
   }
   
   public function create_componentsPanel() {
@@ -243,12 +285,13 @@ class Main extends QMainWindow {
       
       while($parent != NULL) {
         if($parent->objectName != $this->formareaName) {
-          $parent = $parent->getParent();
+          $parent = $parent->parent;
           if($parent != NULL) {
             $fax -= $parent->x;
             $fay -= $parent->y;
           }
-        } else {
+        }
+        else {
           $parentClass = get_class($widget);
           
           while($parentClass != 'QWidget'
@@ -262,12 +305,12 @@ class Main extends QMainWindow {
           $fay -= $widget->y;
           
           $obj->windowOpacity = 1;
-          $obj->parent = $widget;
+          $obj->setParent($widget);
           
-          $newx = floor( $fax / $this->gridSize ) * $this->gridSize;
-          $newy = floor( $fay / $this->gridSize ) * $this->gridSize;
+          $newObjX = floor( $fax / $this->gridSize ) * $this->gridSize;
+          $newObjY = floor( $fay / $this->gridSize ) * $this->gridSize;
           
-          $obj->move($newx, $newy);
+          $obj->move($newObjX, $newObjY);
           $obj->isDynObject = true;
           $obj->show();
           $this->select_object($obj);
@@ -379,6 +422,7 @@ class Main extends QMainWindow {
     foreach($properties as $c => $p) {
       $label = new QLabel($this->propertiesPanel);
       $label->text = $c;
+      $label->styleSheet = 'font-weight:bold;';
       
       $table = new QTableWidget($this->propertiesPanel);
       $table->addColumns(2);
