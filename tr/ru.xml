@@ -4,8 +4,36 @@
 		<source>File</source>
 		<tr>Файл</tr>
 	</unit>
-	<unit>
-		<source>Edit</source>
-		<tr>Правка</tr>
-	</unit>
+  <unit>
+    <source>Edit</source>
+    <tr>Правка</tr>
+  </unit>
+  <unit>
+    <source>Open...</source>
+    <tr>Открыть</tr>
+  </unit>
+  <unit>
+    <source>Qt QWidget application</source>
+    <tr>Приложение Qt QWidget</tr>
+  </unit>
+  <unit>
+    <source>Qt QMainWindow application</source>
+    <tr>Приложение Qt QMainWindow</tr>
+  </unit>
+  <unit>
+    <source>Console application</source>
+    <tr>Консольное приложение</tr>
+  </unit>
+  <unit>
+    <source>Hidden application</source>
+    <tr>Невидимое приложение</tr>
+  </unit>
+  <unit>
+    <source>Open project</source>
+    <tr>Открыть проект</tr>
+  </unit>
+  <unit>
+    <source>New project</source>
+    <tr>Новый проект</tr>
+  </unit>
 </pqenginetr>
