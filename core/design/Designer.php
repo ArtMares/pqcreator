@@ -41,7 +41,7 @@ class PQTabWidget extends QWidget {
   }
 }
 
-class Main extends QMainWindow {
+class Designer extends QMainWindow {
   private $centralWidget;
   
   private $mainLayout;
@@ -499,6 +499,3 @@ class Main extends QMainWindow {
     $object->$property = $value;
   }
 }
-
-$main = new Main;
-$main->show();
