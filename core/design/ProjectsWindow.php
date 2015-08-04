@@ -7,9 +7,10 @@ class ProjectsWindow extends QWidget {
     parent::__construct();
     $this->iconpath = c('___pq_globals_object_')->iconpath;
     
-    $openProject = $this->create_button( tr('Open...'), 'open.png', 
-                                        '', 
-                                        false );
+    $openProject = 
+      $this->create_button( tr('Open...'), 'open.png', 
+                           '', 
+                           false );
     
     $qwidgetProject = 
       $this->create_button( tr('Qt QWidget application'), 'widget.png', 
@@ -74,7 +75,7 @@ class ProjectsWindow extends QWidget {
   
   public function qwidgetProject($sender) {
     $this->hide();
-    $designer = new Designer();
+    $designer = new PQDesigner('QWidget');
     $designer->show();
   }
 }

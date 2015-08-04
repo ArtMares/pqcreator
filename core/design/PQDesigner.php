@@ -325,6 +325,7 @@ class PQDesigner extends QMainWindow {
   public function stop_drag($sender, $x, $y, $button) {
     $sender->draggable = false;
     $this->select_object($sender);
+    $this->codegen->update_code();
   }
   
   public function start_drag($sender, $x, $y, $button) {
