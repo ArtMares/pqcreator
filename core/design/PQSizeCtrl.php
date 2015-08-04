@@ -1,6 +1,6 @@
 <?php
 
-class SizeCtrl extends QObject {
+class PQSizeCtrl extends QObject {
   public $gridSize = 8;
   
   private $formarea;
@@ -25,9 +25,12 @@ class SizeCtrl extends QObject {
   private $preX;
   private $preY;
   
-  public function __construct($formarea, $object, $gridSize) {
+  private $codegen;
+  
+  public function __construct(&$codegen, $formarea, $object, $gridSize) {
     parent::__construct();
     $this->gridSize = $gridSize;
+    $this->codegen = &$codegen;
     $size = $this->size;
     
     $this->lt = new QLabel($formarea);
@@ -184,6 +187,7 @@ class SizeCtrl extends QObject {
     $this->starty = &$y;
     
     $this->updateSels();
+    $this->codegen->update_code();
   }
   
   public function updateSels() {

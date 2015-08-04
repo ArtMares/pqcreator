@@ -1,47 +1,10 @@
 <?php
 
-require_once("SizeCtrl.php");
+require_once("PQSizeCtrl.php");
+require_once("PQTabWidget.php");
+require_once("PQCodeGen.php");
 
-class PQTabWidget extends QWidget {
-  private $stack;
-  private $tabbar;
-  private $layout;
-  
-  public function __construct($parent = 0) {
-    if($parent == 0) parent::__construct();
-    else parent::__construct($parent);
-    
-    
-    $this->layout = new QVBoxLayout;
-    $this->layout->spacing = 0;
-    
-    $this->stack = new QStackedWidget($this);
-    $this->stack->lineWidth = 0;
-    $this->stack->resize(200,200);
-    $this->stack->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred, QSizePolicy::TabWidget);
-    $this->stack->styleSheet = 'QStackedWidget{background-color: white;margin-top:-2px;}';
-    $this->stack->setFrameShape(QFrame::StyledPanel);
-    $this->stack->objectName = '___pq_creator__pqtabwidget_stack_';
-    
-    $this->tabbar = new QTabBar($this);
-    $this->tabbar->expanding = false;
-    
-    $this->setLayout($this->layout);
-    $this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding, QSizePolicy::TabWidget);
-    
-    $this->layout->addWidget($this->tabbar);
-    $this->layout->addWidget($this->stack);
-  }
-  
-  public function addTab($widget, $text) {
-    $this->tabbar->addTab($text);
-    $this->stack->addWidget($widget);
-    $widget->setParent($this->stack);
-    $parent = $widget->parent;
-  }
-}
-
-class Designer extends QMainWindow {
+class PQDesigner extends QMainWindow {
   private $centralWidget;
   
   private $mainLayout;
@@ -55,6 +18,7 @@ class Designer extends QMainWindow {
   private $propertiesDock;
   
   private $objHash;
+  private $forms;
   private $objectList;
   
   private $formareaName = "___pq_creator__formarea_";
@@ -68,8 +32,14 @@ class Designer extends QMainWindow {
   
   private $componentsPath = __DIR__ . "/../components";
   
-  public function __construct() {
+  private $codegen;
+  private $cdata;
+  private $projectParentClass;
+  
+  public function __construct($projectParentClass = '') {
     parent::__construct();
+    
+    $this->projectParentClass = $projectParentClass;
     
     $this->mainLayout = new QHBoxLayout;
     $this->componentsLayout = new QVBoxLayout;
@@ -79,12 +49,11 @@ class Designer extends QMainWindow {
     
     $this->formarea = new PQTabWidget;
     $this->formarea->objectName = '___pq_creator__pqtabwidget_';
-    $this->formarea->addTab(new QWidget, "Form 1");
+    $this->formarea->addTab(new QWidget, 'Form 1');
     $this->formarea->objectName = $this->formareaName;
     
-    $this->create_componentsPanel();
-    $this->mainLayout->addWidget($this->formarea);
-    $this->create_propertiesPanel();
+    $this->objHash = array();
+    $this->codegen = new PQCodeGen($projectParentClass, $this->objHash);
     
     $menubar = new QMenuBar($this);
     $filemenu = $menubar->addMenu(tr("File", "menubar"));
@@ -93,12 +62,14 @@ class Designer extends QMainWindow {
     $openAction = $filemenu->addAction(tr("Open"));
     connect($openAction, SIGNAL('triggered(bool)'), $this, SLOT('aaacl(bool)'));
     
-    $this->setMenuBar($menubar);
+    $this->create_componentsPanel();
+    $this->mainLayout->addWidget($this->formarea);
+    $this->create_propertiesPanel();
     
-    $this->objHash = array();
+    $this->setMenuBar($menubar);
     $this->setCentralWidget($this->centralWidget);
     $this->resize(800,600);
-    $this->windowTitle = "PQCreator";
+    $this->windowTitle = 'PQCreator';
   }
   
   public function tabCloseRequested($sender, $index) {
@@ -258,7 +229,7 @@ class Designer extends QMainWindow {
     $obj->show();
     
     $this->lastEditedObject = $obj;
-    $this->objHash[$objectName] = $index;
+    $this->objHash[$objectName] = $obj;
   }
   
   public function object_key_event($sender, $key, $text) {
@@ -296,6 +267,7 @@ class Designer extends QMainWindow {
           
           while($parentClass != 'QWidget'
                   && $parentClass != 'QFrame'
+                  && $parentClass != 'QGroupBox'
                   && $widget->parent != NULL) {
             $widget = $widget->parent;
             $parentClass = get_class($widget);
@@ -303,23 +275,27 @@ class Designer extends QMainWindow {
           
           $fax -= $widget->x;
           $fay -= $widget->y;
-          
-          $obj->windowOpacity = 1;
-          $obj->setParent($widget);
-          
           $newObjX = floor( $fax / $this->gridSize ) * $this->gridSize;
           $newObjY = floor( $fay / $this->gridSize ) * $this->gridSize;
           
+          $obj->setParent($widget);
+          $obj->windowOpacity = 1;
           $obj->move($newObjX, $newObjY);
           $obj->isDynObject = true;
           $obj->show();
-          $this->select_object($obj);
+          
+          $objectName = $obj->objectName;
+          $objW = $obj->width;
+          $objH = $obj->height;
           
           $component = get_class($obj);
           $icon = $this->componentsPath . "/$component/icon.png";
-          $this->objectList->addItem($obj->objectName, $icon);
+          $this->objectList->addItem($objectName, $icon);
           $this->objectList->currentIndex = $this->objectList->count() - 1;
           
+          $this->codegen->update_code();
+          
+          $this->select_object($obj);
           return;
         }
       }
@@ -328,7 +304,7 @@ class Designer extends QMainWindow {
     $this->lastEditedObject = null;
     $this->delete_object($obj);
   }
-  
+
   public function unselect_object($sender=0,$x=0,$y=0,$btn=0) {
     if($this->sizeCtrl != null
         && is_object($this->sizeCtrl)) {
@@ -340,7 +316,7 @@ class Designer extends QMainWindow {
   
   public function select_object($object) {
     $this->unselect_object();
-    $this->sizeCtrl = new SizeCtrl($object->parent, $object, $this->gridSize);
+    $this->sizeCtrl = new PQSizeCtrl($this->codegen, $object->parent, $object, $this->gridSize);
     $this->load_object_properties($object);
     $this->objectList->setCurrentText( $object->objectName );
     $object->setFocus();
@@ -488,11 +464,11 @@ class Designer extends QMainWindow {
     $object = c($objectName);
     
     if($property == "objectName") {
-      $index = $this->objHash[$object->objectName];
+      $this->objHash[$object->objectName];
       
       $this->objectList->setItemText( $this->objectList->itemIndex($object->objectName), $value );
       unset($this->objHash[$object->objectName]);
-      $this->objHash[$value] = $index;
+      $this->objHash[$value] = $object;
       $sender->__pq_objectName_ = $value;
     }
     
