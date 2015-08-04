@@ -10,7 +10,19 @@
   </unit>
   <unit>
     <source>Open...</source>
-    <tr>Открыть</tr>
+    <tr>Открыть...</tr>
+  </unit>
+  <unit>
+    <source>View...</source>
+    <tr>Обзор...</tr>
+  </unit>
+  <unit>
+    <source>Create in:</source>
+    <tr>Создать в:</tr>
+  </unit>
+  <unit>
+    <source>Project name:</source>
+    <tr>Название:</tr>
   </unit>
   <unit>
     <source>Qt QWidget application</source>
