@@ -5,7 +5,7 @@ require_once("PQTabWidget.php");
 require_once("PQCodeGen.php");
 
 class PQDesigner extends QMainWindow {
-  private $centralWidget;
+  private $iconpath;
   
   private $mainLayout;
   private $componentsLayout;
@@ -16,6 +16,8 @@ class PQDesigner extends QMainWindow {
   private $propertiesLayout;
   private $propertiesPanel;
   private $propertiesDock;
+  private $actionsPanel;
+  private $actionsLayout;
   
   private $objHash;
   private $forms;
@@ -33,15 +35,18 @@ class PQDesigner extends QMainWindow {
   private $componentsPath = __DIR__ . "/../components";
   
   private $codegen;
-  private $cdata;
   private $projectParentClass;
   
-  public function __construct($projectParentClass = '') {
+  private $project_dir;
+  
+  public function __construct($projectParentClass = '', $project_dir = '') {
     parent::__construct();
+    $this->iconpath = c('___pq_globals_object_')->iconpath;
     
     $this->projectParentClass = $projectParentClass;
     
-    $this->mainLayout = new QHBoxLayout;
+    $this->mainLayout = new QVBoxLayout;
+    $this->mainLayout->setMargin(0);
     $this->componentsLayout = new QVBoxLayout;
     
     $this->centralWidget = new QWidget;
@@ -55,6 +60,8 @@ class PQDesigner extends QMainWindow {
     $this->objHash = array();
     $this->codegen = new PQCodeGen($projectParentClass, $this->objHash);
     
+    $this->create_toolBars();
+    
     $menubar = new QMenuBar($this);
     $filemenu = $menubar->addMenu(tr("File", "menubar"));
     $setsmenu = $menubar->addMenu(tr("Edit"));
@@ -63,17 +70,36 @@ class PQDesigner extends QMainWindow {
     connect($openAction, SIGNAL('triggered(bool)'), $this, SLOT('aaacl(bool)'));
     
     $this->create_componentsPanel();
+    $this->mainLayout->addWidget($this->actionsPanel);
     $this->mainLayout->addWidget($this->formarea);
     $this->create_propertiesPanel();
     
     $this->setMenuBar($menubar);
-    $this->setCentralWidget($this->centralWidget);
     $this->resize(800,600);
     $this->windowTitle = 'PQCreator';
   }
   
   public function tabCloseRequested($sender, $index) {
     echo "tabCloseRequested $index";
+  }
+  
+  public function create_toolBars() {
+    $topToolBar = new QToolBar($this);
+    $stopAction = $topToolBar->addAction($this->iconpath . 'stop.png', tr('Stop'));
+    $runAction = $topToolBar->addAction($this->iconpath . 'run.png', tr('Run'));
+    
+    $stopAction->connect(SIGNAL('triggered(bool)'), $this, SLOT('pq_stop_action(bool)'));
+    $runAction->connect(SIGNAL('triggered(bool)'), $this, SLOT('pq_run_action(bool)'));
+    
+    $this->addToolBar(Qt::TopToolBarArea,  $topToolBar);
+  }
+  
+  public function pq_run_action() {
+    
+  }
+  
+  public function pq_stop_action() {
+    echo 'stop';
   }
   
   public function create_componentsPanel() {
