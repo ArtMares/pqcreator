@@ -19,7 +19,7 @@ class PQCodeGen extends QTextEdit {
     $e = '%--P-Q--C-O-D-E%%';
     $extends = $this->projectParentClass;
     
-    $mainclass = "class Main extends $extends {\n$e\n}";
+    $mainclass = "class PQMain extends $extends {\n$e\n}";
     $e_mainclass = '';
     
     $fn___construct = "  public function __construct() {\n$e\n  }";
@@ -55,6 +55,7 @@ class PQCodeGen extends QTextEdit {
     $e_mainclass .= $fn___construct . "\n\n";
     $e_mainclass .= $fn_initComponents;
     $mainclass = str_replace($e, $e_mainclass, $mainclass);
+    $mainclass .= "\n\n\$pqmain = new PQMain; \$pqmain->show();";
     
     $this->plainText = $mainclass;
   }
