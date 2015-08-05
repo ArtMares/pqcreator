@@ -20,7 +20,6 @@ class PQDesigner extends QMainWindow {
   private $actionsLayout;
   
   private $objHash;
-  private $propertiesHash;
   
   private $forms;
   private $objectList;
@@ -322,10 +321,6 @@ class PQDesigner extends QMainWindow {
         $obj->isDynObject = true;
         $obj->show();
         
-        if(!isset($this->propertiesHash[$objectName])) {
-          $this->propertiesHash[$objectName] = array();
-        }
-        
         $objectName = $obj->objectName;
         $objW = $obj->width;
         $objH = $obj->height;
@@ -426,6 +421,8 @@ class PQDesigner extends QMainWindow {
     unset($this->objHash[$objectName]);
     $this->objectList->removeItem( $this->objectList->itemIndex($objectName) );
     $object->free();
+    
+    $this->codegen->update_code();
   }
   
   public function load_object_properties($object) {
@@ -546,7 +543,6 @@ class PQDesigner extends QMainWindow {
         }
       }
       
-      
       $this->propertiesLayout->addWidget($label);
       $this->propertiesLayout->addWidget($table);
     }
@@ -577,5 +573,6 @@ class PQDesigner extends QMainWindow {
     }
     
     $object->$property = $value;
+    $this->codegen->update_code();
   }
 }

@@ -91,7 +91,7 @@ class PQCodeGen extends QTextEdit {
     $e_mainclass .= $fn___construct . "\n\n";
     $e_mainclass .= $fn_initComponents;
     $mainclass = str_replace($e, $e_mainclass, $mainclass);
-    $mainclass .= "\n\n\$pqmain = new PQMain; \$pqmain->show();";
+    $mainclass .= "\n\n\$pqmain = new PQMain;\n\$pqmain->show();";
     
     $this->plainText = $mainclass;
   }
