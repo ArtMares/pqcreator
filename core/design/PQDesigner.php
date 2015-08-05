@@ -55,6 +55,7 @@ class PQDesigner extends QMainWindow {
     $this->formarea = new PQTabWidget;
     $this->formarea->objectName = '___pq_creator__pqtabwidget_';
     $this->formarea->addTab(new QWidget, 'Form 1');
+    $this->formarea->addTab(new QWidget, '', 'C:/pqcreator-git/pqcreator/core/design/faenza-icons/new.png');
     $this->formarea->objectName = $this->formareaName;
     
     $this->objHash = array();
@@ -77,6 +78,7 @@ class PQDesigner extends QMainWindow {
     $this->setMenuBar($menubar);
     $this->resize(800,600);
     $this->windowTitle = 'PQCreator';
+    $this->objectName = '___pqcreator_mainwidget_';
   }
   
   public function tabCloseRequested($sender, $index) {
@@ -268,62 +270,53 @@ class PQDesigner extends QMainWindow {
   }
   
   public function test_create($sender, $x, $y, $button) {
-    $wx = $x - $this->geometry()["x"];
-    $wy = $y - $this->geometry()["y"];
-    $widget = $this->widgetAt($wx, $wy);
-    
-    $obj = $this->lastEditedObject;
+    $wpoint = $this->mapFromGlobal($x, $y);
+    $widget = $this->widgetAt($wpoint['x'], $wpoint['y']);
     
     if($widget != NULL) {
+      $ppoint = $widget->mapFromGlobal($x, $y);
+      
       $parent = $widget;
-      
-      $fax = $wx - $this->centralWidget->geometry()["x"];
-      $fay = $wy - $this->centralWidget->geometry()["y"];
-      
       while($parent != NULL) {
-        if($parent->objectName != $this->formareaName) {
+        if($parent->objectName != '___pq_formwidget__centralwidget_') {
           $parent = $parent->parent;
-          if($parent != NULL) {
-            $fax -= $parent->x;
-            $fay -= $parent->y;
-          }
+          continue;
         }
-        else {
+        
+        $parentClass = get_class($widget);
+        
+        while($parentClass != 'QWidget'
+                && $parentClass != 'QFrame'
+                && $parentClass != 'QGroupBox'
+                && $parentClass != 'PQTabWidget'
+                && $widget->parent != NULL) {
+          $widget = $widget->parent;
           $parentClass = get_class($widget);
-          
-          while($parentClass != 'QWidget'
-                  && $parentClass != 'QFrame'
-                  && $parentClass != 'QGroupBox'
-                  && $widget->parent != NULL) {
-            $widget = $widget->parent;
-            $parentClass = get_class($widget);
-          }
-          
-          $fax -= $widget->x;
-          $fay -= $widget->y;
-          $newObjX = floor( $fax / $this->gridSize ) * $this->gridSize;
-          $newObjY = floor( $fay / $this->gridSize ) * $this->gridSize;
-          
-          $obj->setParent($widget);
-          $obj->windowOpacity = 1;
-          $obj->move($newObjX, $newObjY);
-          $obj->isDynObject = true;
-          $obj->show();
-          
-          $objectName = $obj->objectName;
-          $objW = $obj->width;
-          $objH = $obj->height;
-          
-          $component = get_class($obj);
-          $icon = $this->componentsPath . "/$component/icon.png";
-          $this->objectList->addItem($objectName, $icon);
-          $this->objectList->currentIndex = $this->objectList->count() - 1;
-          
-          $this->codegen->update_code();
-          
-          $this->select_object($obj);
-          return;
         }
+        
+        $newObjX = floor( $ppoint['x'] / $this->gridSize ) * $this->gridSize;
+        $newObjY = floor( $ppoint['y'] / $this->gridSize ) * $this->gridSize;
+        
+        $obj = $this->lastEditedObject;
+        $obj->setParent($widget);
+        $obj->windowOpacity = 1;
+        $obj->move($newObjX, $newObjY);
+        $obj->isDynObject = true;
+        $obj->show();
+        
+        $objectName = $obj->objectName;
+        $objW = $obj->width;
+        $objH = $obj->height;
+        
+        $component = get_class($obj);
+        $icon = $this->componentsPath . "/$component/icon.png";
+        $this->objectList->addItem($objectName, $icon);
+        $this->objectList->currentIndex = $this->objectList->count() - 1;
+        
+        $this->codegen->update_code();
+        
+        $this->select_object($obj);
+        return;
       }
     }
     
@@ -419,7 +412,6 @@ class PQDesigner extends QMainWindow {
         $component = $r['parent'];
       }
     }
-    
     
     // Отображаем все свойства на панели
     foreach($properties as $c => $p) {

@@ -8,14 +8,14 @@ class PQSizeCtrl extends QObject {
   private $styleSheet = 'background:#000020; border:1px solid #0000a0;';
   private $size = 6;
   
-  private $lt;
-  private $lb;
-  private $lm;
-  private $rt;
-  private $rb;
-  private $rm;
-  private $tm;
-  private $bm;
+  public $lt;
+  public $lb;
+  public $lm;
+  public $rt;
+  public $rb;
+  public $rm;
+  public $tm;
+  public $bm;
   
   private $startx;
   private $starty;
@@ -187,7 +187,10 @@ class PQSizeCtrl extends QObject {
     $this->starty = &$y;
     
     $this->updateSels();
-    $this->codegen->update_code();
+    
+    if($this->codegen != null) {
+      $this->codegen->update_code();
+    }
   }
   
   public function updateSels() {
