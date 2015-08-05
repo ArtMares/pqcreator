@@ -178,6 +178,7 @@ class ProjectsWindow extends QWidget {
     $label = new QLabel($widget);
     $label->icon = $this->iconpath . $icon;
     $label->setIconSize(32, 32);
+    $label->resize(32, 32);
     $label->enabled = $enabled;
     $label->move(10, 0);
     
