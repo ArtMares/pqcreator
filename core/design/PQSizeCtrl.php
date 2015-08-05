@@ -117,7 +117,7 @@ class PQSizeCtrl extends QObject {
   public function make_movable($sel) {
     connect($sel, SIGNAL('mousePressed(int,int,int)'), $this, SLOT('start_resize(int,int,int)'));
     connect($sel, SIGNAL('mouseMoved(int,int)'), $this, SLOT('resize(int,int)'));
-    $sel->lockParentClassEvents(true);
+    $sel->lockParentClassEvents = true;
   }
   
   public function start_resize($sender, $x, $y, $button) {

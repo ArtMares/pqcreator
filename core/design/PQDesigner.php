@@ -20,6 +20,8 @@ class PQDesigner extends QMainWindow {
   private $actionsLayout;
   
   private $objHash;
+  private $propertiesHash;
+  
   private $forms;
   private $objectList;
   
@@ -168,13 +170,14 @@ class PQDesigner extends QMainWindow {
   
   public function create_button($component) {
     $componentsPath = $this->componentsPath;
+    $componentPath = "$componentsPath/$component/component.php";
   
-    $objectName = "create_$component";
-    $buttonText = $objectName;
     $r = array();
-    if(is_file("$componentsPath/$component/component.php")) {
-      require("$componentsPath/$component/component.php");
+    if(file_exists($componentPath)
+        && is_file($componentPath)) {
+      include $componentPath;
     }
+    else return;
     
     if(!isset($r['group'])
         || $r['group'] == 'NoVisual') {
@@ -188,7 +191,8 @@ class PQDesigner extends QMainWindow {
       $parentClass = null;
     }
     
-    $buttonText = $r['title'];
+    $objectName = isset($r['objectName']) ? "pqcreatebutton_${component}_${r[objectName]}" : "pqcreatebutton_${component}_${component}";
+    $buttonText = isset($r['title']) ? $r['title'] : $component;
     
     $button = new QPushButton($this->componentsPanel);
     $button->objectName = $objectName;
@@ -213,10 +217,11 @@ class PQDesigner extends QMainWindow {
   }
   
   public function create_object($sender, $x, $y, $button) {
-    $type = explode("_", $sender->objectName)[1];
+    $e = explode("_", $sender->objectName);
+    $type = $e[1];
+    $objectName = $e[2];
     
     $index = 0;
-    $objectName = strtolower($type);
     if(isset($this->objHash[$objectName])) {
       $index = 1;
       while(isset($this->objHash["${objectName}_$index"])) {
@@ -234,13 +239,12 @@ class PQDesigner extends QMainWindow {
     $obj->objectName = $objectName;
     $obj->setWindowFlags(Qt::Tool|Qt::WindowStaysOnTopHint|Qt::FramelessWindowHint);
     $obj->setAttribute(Qt::WA_TranslucentBackground);
-    $obj->text = $objectName;
     $obj->parentClass = $sender->parentClass;
     $obj->parentClass = $sender->parentClass;
     
     $obj->move($x, $y);
     $obj->windowOpacity = 0.5;
-    $obj->lockParentClassEvents(true);
+    $obj->lockParentClassEvents = true;
     $obj->defaultPropertiesLoaded = false;
     
     if($sender->defobjw !== null &&
@@ -257,7 +261,21 @@ class PQDesigner extends QMainWindow {
     $obj->show();
     
     $this->lastEditedObject = $obj;
-    $this->objHash[$objectName] = $obj;
+    
+    $objDataArr = array(
+      'object' => $obj, 
+      'properties' => array()
+    );
+  
+    $objDataArr['properties'][] = 'objectName';
+    $objDataArr['properties'][] = 'x';
+    $objDataArr['properties'][] = 'y';
+    $objDataArr['properties'][] = 'width';
+    $objDataArr['properties'][] = 'height';
+    
+    $objData = new ArrayObject($objDataArr, ArrayObject::ARRAY_AS_PROPS);
+    
+    $this->objHash[$objectName] = $objData;
   }
   
   public function object_key_event($sender, $key, $text) {
@@ -272,9 +290,9 @@ class PQDesigner extends QMainWindow {
   public function test_create($sender, $x, $y, $button) {
     $wpoint = $this->mapFromGlobal($x, $y);
     $widget = $this->widgetAt($wpoint['x'], $wpoint['y']);
+    $obj = $this->lastEditedObject;
     
     if($widget != NULL) {
-      $ppoint = $widget->mapFromGlobal($x, $y);
       
       $parent = $widget;
       while($parent != NULL) {
@@ -294,15 +312,19 @@ class PQDesigner extends QMainWindow {
           $parentClass = get_class($widget);
         }
         
+        $ppoint = $widget->mapFromGlobal($x, $y);
         $newObjX = floor( $ppoint['x'] / $this->gridSize ) * $this->gridSize;
         $newObjY = floor( $ppoint['y'] / $this->gridSize ) * $this->gridSize;
         
-        $obj = $this->lastEditedObject;
         $obj->setParent($widget);
         $obj->windowOpacity = 1;
         $obj->move($newObjX, $newObjY);
         $obj->isDynObject = true;
         $obj->show();
+        
+        if(!isset($this->propertiesHash[$objectName])) {
+          $this->propertiesHash[$objectName] = array();
+        }
         
         $objectName = $obj->objectName;
         $objW = $obj->width;
@@ -342,19 +364,41 @@ class PQDesigner extends QMainWindow {
   }
   
   public function stop_drag($sender, $x, $y, $button) {
-    $sender->draggable = false;
-    $this->select_object($sender);
-    $this->codegen->update_code();
+    switch($button) {
+    case Qt::LeftButton:
+      $sender->draggable = false;
+      $this->select_object($sender);
+      $this->codegen->update_code();
+      break;
+      
+    case Qt::RightButton:
+      $menu = new QMenu();
+      
+      $raiseAction = $menu->addAction(c('___pq_globals_object_')->qticonpath . 'editraise.png', tr('To front'));
+      $raiseAction->connect(SIGNAL('triggered(bool)'), $sender, SLOT('raise()'));
+      
+      $lowerAction = $menu->addAction(c('___pq_globals_object_')->qticonpath . 'editlower.png', tr('To back'));
+      $lowerAction->connect(SIGNAL('triggered(bool)'), $sender, SLOT('lower()'));
+      
+      $menu->exec(mousePos()['x'], mousePos()['y']);
+      $menu->free();
+      break;
+      
+    }
   }
   
   public function start_drag($sender, $x, $y, $button) {
-    $this->unselect_object();
-    $sender->draggable = true;
-    $dx = $x - ($this->geometry()["x"] + $this->formarea->x + $sender->x);
-    $dy = $y - ($this->geometry()["y"] + $this->formarea->y + $sender->y);
-    $this->startdragx = $this->geometry()["x"] + $this->formarea->x + $dx;
-    $this->startdragy = $this->geometry()["y"] + $this->formarea->y + $dy;
-    $this->lastEditedObject = &$sender;
+    switch($button) {
+    case Qt::LeftButton:
+      $this->unselect_object();
+      $sender->draggable = true;
+      $dx = $x - ($this->geometry()["x"] + $this->formarea->x + $sender->x);
+      $dy = $y - ($this->geometry()["y"] + $this->formarea->y + $sender->y);
+      $this->startdragx = $this->geometry()["x"] + $this->formarea->x + $dx;
+      $this->startdragy = $this->geometry()["y"] + $this->formarea->y + $dy;
+      $this->lastEditedObject = &$sender;
+      break;
+    }
   }
   
   public function move_object($sender, $x, $y) {
@@ -425,42 +469,65 @@ class PQDesigner extends QMainWindow {
       $table->setHorizontalHeaderText(1, tr('Value'));
       $table->verticalHeaderVisible = false;
     
+      $defaultPropertiesLoaded = $object->defaultPropertiesLoaded;
+    
       foreach($p as $property) {
         $row = $table->rowCount();
         $table->addRow();
         $table->setTextAt($row, 0, $property['title']);
         $widget = null;
         
+        switch($property['property']) {
+          case 'text':
+          case 'title':
+            if(isset($property['value'])) {
+              $object->$property['property'] = $property['value'];
+            }
+            else {
+              $object->$property['property'] = $object->objectName;
+            }
+            break;
+        }
+        
         switch($property['type']) {
-        case 'mixed':
-          $widget = new QLineEdit;
-          
-          if(isset($property['value'])
-              && !$object->defaultPropertiesLoaded) {
-            $widget->text = $property['value'];
-          } else {
-            $widget->text = $object->$property['property'];
-          }
-          
-          if(isset($property['validator'])) {
-            $widget->setRegExpValidator($property['validator']);
-          }
-          
-          $widget->connect(SIGNAL('textChanged(QString)'), $this, SLOT('set_object_property(QString)'));
-          break;
-          
-        case 'bool':
-          $widget = new QCheckBox;
-          
-          if(isset($property['value'])
-              && !$object->defaultPropertiesLoaded) {
-            $widget->checked = $property['value'];
-          } else {
-            $widget->checked = $object->$property['property'];
-          }
-          
-          $widget->connect(SIGNAL('toggled(bool)'), $this, SLOT('set_object_property(bool)'));
-          break;
+          case 'mixed':
+          case 'int':
+            $widget = new QLineEdit;
+            
+            if(isset($property['value'])
+                && !$defaultPropertiesLoaded) {
+              $widget->text = $property['value'];
+            } else {
+              $widget->text = $object->$property['property'];
+            }
+            
+            // set validator if section exists
+            if(isset($property['validator'])) {
+              $widget->setRegExpValidator($property['validator']);
+            } 
+            else {
+              // if property type is `int` and validator section not exists, 
+              // then set a default validator for integers
+              if($property['type'] == 'int') {
+                $widget->setRegExpValidator('[0-9]*');
+              }
+            }
+            
+            $widget->connect(SIGNAL('textChanged(QString)'), $this, SLOT('set_object_property(QString)'));
+            break;
+            
+          case 'bool':
+            $widget = new QCheckBox;
+            
+            if(isset($property['value'])
+                && !$defaultPropertiesLoaded) {
+              $widget->checked = $property['value'];
+            } else {
+              $widget->checked = $object->$property['property'];
+            }
+            
+            $widget->connect(SIGNAL('toggled(bool)'), $this, SLOT('set_object_property(bool)'));
+            break;
         }
         
         if($widget != null) {
@@ -468,13 +535,25 @@ class PQDesigner extends QMainWindow {
           $widget->__pq_property_ = $property['property'];
           $table->setCellWidget($row, 1, $widget);
         }
+        
+        if(!$defaultPropertiesLoaded) {
+          $objectName = $object->objectName;
+          if(!in_array($property['property'], $this->objHash[$objectName]->properties)) {
+            if(isset($property['value'])) {
+              //$this->objHash[$objectName]->properties[] = $property['property'];
+            }
+          }
+        }
       }
+      
       
       $this->propertiesLayout->addWidget($label);
       $this->propertiesLayout->addWidget($table);
     }
     
-    $object->defaultPropertiesLoaded = true;
+    if(!$defaultPropertiesLoaded) {
+      $object->defaultPropertiesLoaded = true;
+    }
   }
   
   public function set_object_property($sender, $value) {
@@ -483,12 +562,18 @@ class PQDesigner extends QMainWindow {
     $object = c($objectName);
     
     if($property == "objectName") {
-      $this->objHash[$object->objectName];
+      $objData = $this->objHash[$objectName];
+      unset($this->objHash[$objectName]);
       
-      $this->objectList->setItemText( $this->objectList->itemIndex($object->objectName), $value );
-      unset($this->objHash[$object->objectName]);
-      $this->objHash[$value] = $object;
+      $this->objectList->setItemText( $this->objectList->itemIndex($objectName), $value );
+      
+      $this->objHash[$value] = $objData;
       $sender->__pq_objectName_ = $value;
+      $objectName = $value;
+    }
+    
+    if(!in_array($property, $this->objHash[$objectName]->properties)) {
+      $this->objHash[$objectName]->properties[] = $property;
     }
     
     $object->$property = $value;

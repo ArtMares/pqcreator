@@ -48,4 +48,12 @@
     <source>New project</source>
     <tr>Новый проект</tr>
   </unit>
+  <unit>
+    <source>To front</source>
+    <tr>Переместить вперёд</tr>
+  </unit>
+  <unit>
+    <source>To back</source>
+    <tr>Переместить назад</tr>
+  </unit>
 </pqenginetr>
