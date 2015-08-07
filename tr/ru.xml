@@ -56,4 +56,20 @@
     <source>To back</source>
     <tr>Переместить назад</tr>
   </unit>
+  <unit>
+    <source>Layout</source>
+    <tr>Компановщик</tr>
+  </unit>
+  <unit>
+    <source>Vertical layout</source>
+    <tr>Вертикальный</tr>
+  </unit>
+  <unit>
+    <source>Horizontal layout</source>
+    <tr>Горизонтальный</tr>
+  </unit>
+  <unit>
+    <source>Break layout</source>
+    <tr>Удалить</tr>
+  </unit>
 </pqenginetr>

@@ -13,7 +13,6 @@ class PQCodeGen extends QTextEdit {
     $this->projectParentClass = $projectParentClass;
     $this->objHash = &$objHash;
     
-    $this->show();
     $this->move(0, 0);
     $this->resize(400, 600);
     $this->readOnly = true;
