@@ -35,14 +35,14 @@ class PQSizeCtrl extends QObject
 		$this->codegen = &$codegen;
 		$this->container = $container;
 		
-		$this->lt = $this->create_sel("___pq_creator__lt_", Qt::SizeFDiagCursor);
-		$this->lb = $this->create_sel("___pq_creator__lb_", Qt::SizeBDiagCursor);
-		$this->lm = $this->create_sel("___pq_creator__lm_", Qt::SizeHorCursor);
-		$this->rt = $this->create_sel("___pq_creator__rt_", Qt::SizeBDiagCursor);
-		$this->rb = $this->create_sel("___pq_creator__rb_", Qt::SizeFDiagCursor);
-		$this->rm = $this->create_sel("___pq_creator__rm_", Qt::SizeHorCursor);
-		$this->tm = $this->create_sel("___pq_creator__tm_", Qt::SizeVerCursor);
-		$this->bm = $this->create_sel("___pq_creator__bm_", Qt::SizeVerCursor);
+		$this->lt = $this->createSel("___pq_creator__lt_", Qt::SizeFDiagCursor);
+		$this->lb = $this->createSel("___pq_creator__lb_", Qt::SizeBDiagCursor);
+		$this->lm = $this->createSel("___pq_creator__lm_", Qt::SizeHorCursor);
+		$this->rt = $this->createSel("___pq_creator__rt_", Qt::SizeBDiagCursor);
+		$this->rb = $this->createSel("___pq_creator__rb_", Qt::SizeFDiagCursor);
+		$this->rm = $this->createSel("___pq_creator__rm_", Qt::SizeHorCursor);
+		$this->tm = $this->createSel("___pq_creator__tm_", Qt::SizeVerCursor);
+		$this->bm = $this->createSel("___pq_creator__bm_", Qt::SizeVerCursor);
 		
 		$this->selobj = &$object;
 		$this->updateSels();
@@ -60,7 +60,7 @@ class PQSizeCtrl extends QObject
 		$this->bm->free();
 	}
 
-	public function create_sel($objectName, $cursor)
+	public function createSel($objectName, $cursor)
 	{
 		$sel = new QLabel($this->container);
 		$sel->setCursor($cursor);
@@ -90,7 +90,7 @@ class PQSizeCtrl extends QObject
 		if (!$sender->enableResize) return true;
 		switch ($event->type) {
 		case QEvent::MouseButtonPress:
-			$this->start_resize($sender, $event->x, $event->y, $event->globalX, $event->globalY, $event->button);
+			$this->startResize($sender, $event->x, $event->y, $event->globalX, $event->globalY, $event->button);
 			return true;
 			break;
 
@@ -101,7 +101,7 @@ class PQSizeCtrl extends QObject
 		}
 	}
 
-	public function start_resize($sender, $x, $y, $globalX, $globalY, $button)
+	public function startResize($sender, $x, $y, $globalX, $globalY, $button)
 	{
 		$this->startx = $globalX;
 		$this->starty = $globalY;
@@ -117,8 +117,6 @@ class PQSizeCtrl extends QObject
 		$newy = $globalY - $this->starty;
 		$cursor = $sender->cursor;
 		$selname = $sender->objectName;
-		$width = $this->selobj->width;
-		$height = $this->selobj->height;
 		
 		if ($cursor == Qt::SizeHorCursor || $cursor == Qt::SizeFDiagCursor || $cursor == Qt::SizeBDiagCursor) {
 			if ($selname == "___pq_creator__lm_" || $selname == "___pq_creator__lt_" || $selname == "___pq_creator__lb_") {
@@ -156,13 +154,12 @@ class PQSizeCtrl extends QObject
 			}
 		}
 
-
-		$this->startx = & $globalX;
-		$this->starty = & $globalY;
+		$this->startx = &$globalX;
+		$this->starty = &$globalY;
 		$this->updateSels();
 		
 		if ($this->codegen != null) {
-			$this->codegen->update_code();
+			$this->codegen->updateCode();
 		}
 	}
 

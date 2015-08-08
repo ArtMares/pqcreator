@@ -24,11 +24,10 @@ class PQFormWidget extends QFrame
 		
 		$this->borderWidget = new QFrame($this);
 		$this->borderWidget->objectName = '___pq_formwidget__borderwidget_';
-		$this->borderWidget->styleSheet = '#___pq_formwidget__borderwidget_ { border:7px solid #aaa; }';
+		$this->borderWidget->styleSheet = '#___pq_formwidget__borderwidget_ { border:7px solid #aaa; background:#f0f0f0;}';
 		
 		$this->centralWidget = new QWidget($this->borderWidget);
 		$this->centralWidget->objectName = '___pq_formwidget__centralwidget_';
-		$this->centralWidget->autoFillBackground = true;
 		$this->centralWidget->m_lockParentClassEvents = true;
 		
 		$this->centralWidget->setPHPEventListener($this, eventListener);
@@ -52,7 +51,7 @@ class PQFormWidget extends QFrame
 	{
 		switch ($event->type) {
 		case QEvent::Resize:
-			c('___pqcreator_mainwidget_')->unselect_object();
+			c('___pqcreator_mainwidget_')->unselectObject();
 			$this->parent->setMinimumSize($this->width, $this->height);
 			return true;
 			
@@ -91,7 +90,7 @@ class PQFormWidget extends QFrame
 			
 		case QEvent::Paint:
 			$painter = new QPainter($sender);
-			$painter->setPen("#666", 1, $this->penStyle);
+			$painter->setPen("#aaaaaa", 1, $this->penStyle);
 			$painter->drawPointBackground(8, 8, $this->width, $this->height);
 			$painter->free();
 			return true;
@@ -102,7 +101,7 @@ class PQFormWidget extends QFrame
 
 	public function menuLayoutAction($sender, $bool)
 	{
-		c('___pqcreator_mainwidget_')->unselect_object();
+		c('___pqcreator_mainwidget_')->unselectObject();
 		if ($this->centralWidgetLayout != null 
 				&& is_object($this->centralWidgetLayout)) {
 			$this->centralWidgetLayout->free();
@@ -120,7 +119,7 @@ class PQFormWidget extends QFrame
 		}
 	}
 
-	public function update_code()
+	public function updateCode()
 	{
 	}
 }
@@ -144,6 +143,7 @@ class PQTabWidget extends QWidget
 		$this->stack->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred, QSizePolicy::TabWidget);
 		$this->stack->setFrameShape(QFrame::StyledPanel);
 		$this->stack->objectName = '___pq_creator__pqtabwidget_stack_';
+		$this->styleSheet = '#___pq_creator__pqtabwidget_stack_ { margin-top:-2px; border:none; }';
 		
 		$this->tabbar = new QTabBar($this);
 		$this->tabbar->expanding = false;
@@ -166,10 +166,12 @@ class PQTabWidget extends QWidget
 		$scrollArea = new QScrollArea;
 		$scrollArea->objectName = '___pq_creator__pqtabwidget_scrollarea_';
 		
-		$ww = new QWidget();
-		$ww->setPalette("#ffffff");
-		$ww->autoFillBackground = true;
-		$scrollArea->setViewport($ww);
+		$viewport = new QWidget;
+		$viewport->setPalette("#ffffff");
+		$viewport->autoFillBackground = true;
+		$viewport->objectName = '___pq_creator__pqtabwidget_scrollarea_viewport';
+		$viewport->styleSheet = '#___pq_creator__pqtabwidget_scrollarea_viewport > QWidget { padding-top:2px; }';
+		$scrollArea->setViewport($viewport);
 		
 		$scrollArea->setWidget($widget);
 		$scrollArea->setWidgetResizable(true);
