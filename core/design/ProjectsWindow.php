@@ -1,7 +1,7 @@
 <?php
 
 class ProjectsWindow extends QWidget {
-  private $iconpath;
+  private $iconsPath;
   private $newProjectFD;
   private $newProjectFD_lineEdit;
   private $user_projects_path;
@@ -10,7 +10,7 @@ class ProjectsWindow extends QWidget {
   
   public function __construct() {
     parent::__construct();
-    $this->iconpath = c('___pq_globals_object_')->iconpath;
+    $this->iconsPath = c(PQNAME)->iconsPath;
     
     $openProject = 
       $this->create_button( tr('Open project'), 'open.png', 
@@ -144,7 +144,7 @@ class ProjectsWindow extends QWidget {
     if(empty(trim($this->user_projects_path))) {
       // TODO: replace
       // $c_def_dir = explode(':',  __DIR__)[0] . ':/PQProjects_tmp'; // sets the value of $c_def_dir to [C|D|E|...]:/PQProjects_tmp
-      $c_def_dir = c('___pq_globals_object_')->exepath . '/PQProjects_tmp';
+      $c_def_dir = QDir::CurrentPath . '/PQProjects_tmp';
       $def_dir = $c_def_dir;
       
       // Check that the PATH is not a file
@@ -176,7 +176,7 @@ class ProjectsWindow extends QWidget {
     $button->styleSheet = "text-align:$align;padding-left:50px;padding-right:20px;font-size:14px;";
     
     $label = new QLabel($widget);
-    $label->icon = $this->iconpath . $icon;
+    $label->icon = $this->iconsPath . "/$icon";
     $label->setIconSize(32, 32);
     $label->resize(32, 32);
     $label->enabled = $enabled;

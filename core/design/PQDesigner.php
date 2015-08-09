@@ -36,8 +36,8 @@ class PQDesigner extends QMainWindow
 		parent::__construct();
 		
 		$this->objHash = array();
-		$this->iconpath = c('___pq_globals_object_')->iconpath;
-		$this->componentsPath = c('___pq_globals_object_')->csPath;
+		$this->iconsPath = c(PQNAME)->iconsPath;
+		$this->componentsPath = c(PQNAME)->csPath;
 		$this->projectParentClass = $projectParentClass;
 		
 		$this->createToolBars();
@@ -390,11 +390,11 @@ class PQDesigner extends QMainWindow
 			$this->selectObject($sender);
 			$menu = new QMenu();
 			
-			$raiseAction = $menu->addAction(c('___pq_globals_object_')->qticonpath . 'editraise.png', tr('To front'));
+			$raiseAction = $menu->addAction(c(PQNAME)->qticonsPath . '/editraise.png', tr('To front'));
 			$raiseAction->connect(SIGNAL('triggered(bool)'), $this, SLOT('raiseObject(bool)'));
 			$raiseAction->__pq_objectName_ = $sender->objectName;
 			
-			$lowerAction = $menu->addAction(c('___pq_globals_object_')->qticonpath . 'editlower.png', tr('To back'));
+			$lowerAction = $menu->addAction(c(PQNAME)->qticonsPath . '/editlower.png', tr('To back'));
 			$lowerAction->connect(SIGNAL('triggered(bool)'), $this, SLOT('lowerObject(bool)'));
 			$lowerAction->__pq_objectName_ = $sender->objectName;
 			

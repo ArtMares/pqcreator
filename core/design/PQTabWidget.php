@@ -72,15 +72,15 @@ class PQFormWidget extends QFrame
 			$menu = new QMenu();
 			$menu_layout = $menu->addMenu(tr('Layout'));
 			
-			$action = $menu_layout->addAction(c('___pq_globals_object_')->qticonpath . 'editbreaklayout.png', tr('Break layout'));
+			$action = $menu_layout->addAction(c(PQNAME)->qticonsPath . '/editbreaklayout.png', tr('Break layout'));
 			$action->connect(SIGNAL('triggered(bool)') , $this, SLOT('menuLayoutAction(bool)'));
 			$action->objectName = 'menuLayoutAction_NoLayout';
 			
-			$action = $menu_layout->addAction(c('___pq_globals_object_')->qticonpath . 'editvlayout.png', tr('Vertical layout'));
+			$action = $menu_layout->addAction(c(PQNAME)->qticonsPath . '/editvlayout.png', tr('Vertical layout'));
 			$action->connect(SIGNAL('triggered(bool)') , $this, SLOT('menuLayoutAction(bool)'));
 			$action->objectName = 'menuLayoutAction_QVBoxLayout';
 			
-			$action = $menu_layout->addAction(c('___pq_globals_object_')->qticonpath . 'edithlayout.png', tr('Horizontal layout'));
+			$action = $menu_layout->addAction(c(PQNAME)->qticonsPath . '/edithlayout.png', tr('Horizontal layout'));
 			$action->connect(SIGNAL('triggered(bool)') , $this, SLOT('menuLayoutAction(bool)'));
 			$action->objectName = 'menuLayoutAction_QHBoxLayout';
 			

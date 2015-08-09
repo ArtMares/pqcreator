@@ -15,7 +15,7 @@ class PQCodeGen extends QTextEdit {
 		$this->projectParentClass = $projectParentClass;
 		$this->objHash = & $objHash;
 		$this->nullParentName = $nullParentName;
-		$this->pq_globals = c('___pq_globals_object_');
+		$this->pq_globals = c(PQNAME);
 		$this->move(0, 0);
 		$this->resize(400, 600);
 		$this->readOnly = true;
@@ -118,8 +118,8 @@ class PQCodeGen extends QTextEdit {
 			return $this->dynTypeHash["${component}_${property}"];
 		}
 
-		$componentPath = $this->pq_globals->csPath . "$component/" . $this->pq_globals->csName;
-		$propertiesPath = $this->pq_globals->csPath . "$component/" . $this->pq_globals->csProperties;
+		$componentPath = $this->pq_globals->csPath . "/$component/" . $this->pq_globals->csName;
+		$propertiesPath = $this->pq_globals->csPath . "/$component/" . $this->pq_globals->csProperties;
 
 		$type = 'unknown';
 
