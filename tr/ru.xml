@@ -72,4 +72,70 @@
     <source>Break layout</source>
     <tr>Удалить</tr>
   </unit>
+  <unit>
+    <source>Package not found</source>
+    <tr>Пакет не найден</tr>
+  </unit>
+  <unit>
+    <source>PQPack package not found in `%s` directory.
+Without PQPack package you can't compile applications.
+
+Download and install it?</source>
+    <tr>Пакет PQPack не найден в директории `%s`.
+Без этого пакета Вы не сможете компилировать приложения.
+
+Скачать и установить его?</tr>
+  </unit>
+  <unit>
+    <source>Yes</source>
+    <tr>Да</tr>
+  </unit>
+  <unit>
+    <source>No (Quit)</source>
+    <tr>Нет (выход)</tr>
+  </unit>
+  <unit>
+    <source>PQCreator error</source>
+    <tr>Ошибка PQCreator</tr>
+  </unit>
+  <unit>
+    <source>Cannot access to PQPack directory `%s`</source>
+    <tr>Нет доступа к директории PQPack: `%s`</tr>
+  </unit>
+  <unit>
+    <source>Downloading PQPack package</source>
+    <tr>Загрузка пакета PQPack</tr>
+  </unit>
+  <unit>
+    <source>Error download PQPack! :-( Please, try later...</source>
+    <tr>Во время загрузки произошла ошибка! :-( Пожалуйста, повторите попытку позднее...</tr>
+  </unit>
+  <unit>
+    <source>Writing in file...</source>
+    <tr>Запись в файл...</tr>
+  </unit>
+  <unit>
+    <source>Unzip data in `%s`</source>
+    <tr>Распаковка в `%s`</tr>
+  </unit>
+  <unit>
+    <source>Error creating directory `%s`!</source>
+    <tr>Ошибка создания директории `%s`</tr>
+  </unit>
+  <unit>
+    <source>Done!</source>
+    <tr>Готово!</tr>
+  </unit>
+  <unit>
+    <source>Error unzip PQPack package `%s`!</source>
+    <tr>Не удалось распаковать файл `%s`</tr>
+  </unit>
+  <unit>
+    <source>Quit</source>
+    <tr>Выход</tr>
+  </unit>
+  <unit>
+    <source>Continue</source>
+    <tr>Продолжить</tr>
+  </unit>
 </pqenginetr>

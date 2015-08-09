@@ -13,7 +13,7 @@ class PQDownloader extends QDialog {
 	public function __construct() {
 		parent::__construct();
 		
-		$this->textEdit_static_text = tr('Download PQPack package');
+		$this->textEdit_static_text = tr('Downloading PQPack package');
 		$this->setWindowFlags( Qt::MSWindowsFixedSizeDialogHint
 								|Qt::WindowStaysOnTopHint
 								|Qt::WindowTitleHint );
@@ -74,7 +74,7 @@ class PQDownloader extends QDialog {
 				
 				$this->hide();
 				$messagebox->critical(0, tr('PQCreator error'), 
-										sprintf( tr('Error creating directory (`%s`)!'), $this->destinationDir ),
+										sprintf( tr('Error creating directory `%s`!'), $this->destinationDir ),
 										tr('Quit'));
 				
 				$zip->close();
@@ -97,7 +97,7 @@ class PQDownloader extends QDialog {
 		
 		$this->hide();
 		$messagebox->critical(0, tr('PQCreator error'), 
-								sprintf( tr('Error unzip PQPack package (`%s`)!'), $this->tempFilePath ),
+								sprintf( tr('Error unzip PQPack package `%s`!'), $this->tempFilePath ),
 								tr('Quit'));
 								
 		qApp::quit();

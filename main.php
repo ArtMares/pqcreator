@@ -46,8 +46,8 @@ class PQCreator extends QObject {
 	private function getPQPackDialog() {
 		$messagebox = new QMessageBox;
 		$answer = (int) $messagebox->question(0, tr('Package not found'), 
-												sprintf( tr("PQPack package not found in `%s` directory.\n".
-												"Without PQPack package you can't compile applications.\n\n".
+												sprintf( tr("PQPack package not found in `%s` directory.\r\n".
+												"Without PQPack package you can't compile applications.\r\n\r\n".
 												"Download and install it?"), $this->pqpackPath ), 
 												tr('Yes'), 
 												tr('No (Quit)') );
