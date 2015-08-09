@@ -52,8 +52,8 @@ class PQDownloader extends QDialog {
 	}
 	
 	public function downloaded() {
-	
 		$messagebox = new QMessageBox;
+		
 		if($this->progressBar->value != $this->progressBar->maximum) {
 			$this->hide();
 			$messagebox->critical(0, tr('PQCreator error'), 
@@ -65,7 +65,6 @@ class PQDownloader extends QDialog {
 	
 		$this->textEdit->html .= "\n" . tr('Writing in file...');
 		file_put_contents($this->tempFilePath, $this->downloader->downloadedData());
-		
 		
 		$this->textEdit->html .= "\n" . sprintf( tr('Unzip data in `%s`'), $this->destinationDir );
 		$zip = new ZipArchive;
@@ -91,6 +90,8 @@ class PQDownloader extends QDialog {
 			$messagebox->free();
 			unset($messagebox);
 			
+			qApp::beep();
+			
 			return;
 		} 
 		
@@ -103,11 +104,18 @@ class PQDownloader extends QDialog {
 	}
 	
 	public function downloadProgress($sender, $received, $total) {
-		$this->progressBar->maximum = $total;
 		$this->progressBar->value = $received;
+		$this->progressBar->maximum = $total;
+		
+		$rs = 'Kb';
+		$ts = 'Kb';
 		
 		$r = round($received / 1024, 2);
 		$t = round($total / 1024, 2);
-		$this->textEdit->html = $this->textEdit_static_text . "... (${r}Kb / ${t}Kb)";
+		
+		if($r > 1024) { $r = round($r / 1024, 2); $rs = 'Mb'; }
+		if($t > 1024) { $t = round($t / 1024, 2); $ts = 'Mb'; }
+		
+		$this->textEdit->html = $this->textEdit_static_text . "... (${r}${rs} / ${t}${ts})";
 	}
 }

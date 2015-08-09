@@ -86,7 +86,7 @@ class PQCreator extends QObject {
 			$tempFilePath = $tempFile_c . rand(1,9999) . '.pqdownload';
 		}
 		
-		$this->downloader->download( 'http://wxmaper.ru/phpqt5/PQEngine.zip', $tempFilePath, $this->pqpackPath );
+		$this->downloader->download( 'http://phpqt.ru/downloads/pqpack/pqpack-0.1-rc1.zip', $tempFilePath, $this->pqpackPath );
 	}
 	
 	public function run() {
