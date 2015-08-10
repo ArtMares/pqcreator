@@ -3,6 +3,7 @@
 class PQCodeGen extends QTextEdit {
 	private $projectParentClass;
 	private $objHash;
+	private $sortedObjHash;
 	private $nullParentName;
 	private $pq_globals;
 	
@@ -37,9 +38,41 @@ class PQCodeGen extends QTextEdit {
 		);
 		$this->dynTypeHash = array();
 	}
+	
+	private function resortHash() {
+		$sortedObjHash = array();
+		
+		foreach($this->objHash as $objectName => $objData) {
+			$index = count($sortedObjHash);
+			$sortedObjHash[$index] = array('objectName' => $objectName, 'lvl' => 0, 'objData' => $objData);
+			$parentObjectName = c($objectName)->parent->objectName;
+			while($parentObjectName !== $this->nullParentName) {
+				$sortedObjHash[$index]['lvl']++;
+				$parentObjectName = c($parentObjectName)->parent->objectName;
+			}
+		}
+		
+		$t = true;
+		while($t) {
+			$t = false;
+			for($index = 0; $index < count($sortedObjHash) - 1; $index++) {
+				if ($sortedObjHash[$index]['lvl'] > $sortedObjHash[$index + 1]['lvl']) {
+					$temp = $sortedObjHash[$index + 1];
+					$sortedObjHash[$index + 1] = $sortedObjHash[$index];
+					$sortedObjHash[$index] = $temp;
+					$t = true;
+				}
+			}
+		}
+		
+		$this->sortedObjHash = $sortedObjHash;
+	}
   
 	public function updateCode() 
 	{
+		// Update object tree
+		$this->resortHash();
+		
 		$e = '%--P-Q--C-O-D-E%%';
 		$extends = $this->projectParentClass;
 		
@@ -52,11 +85,13 @@ class PQCodeGen extends QTextEdit {
 		$fn_initComponents = "  private function initComponents() {\n$e  }";
 		$e_fn_initComponents = '';
     
-		$lastIndex = count($this->objHash) - 1;
+		$lastIndex = count($this->sortedObjHash) - 1;
 		$index = 0;
-		foreach($this->objHash as $objectName => $objData) {
-			$component = get_class($objData->object);
+		foreach($this->sortedObjHash as $index => $objHash) {
+			$objectName = $objHash['objectname'];
+			$objData = $objHash['objData'];
 			
+			$component = get_class($objData->object);
 			$e_mainclass .= "  private $${objectName};\n";
 			
 			$parentObjectName = $objData->object->parent->objectName;
@@ -102,7 +137,7 @@ class PQCodeGen extends QTextEdit {
 		$e_mainclass .= $fn___construct . "\n\n";
 		$e_mainclass .= $fn_initComponents;
 		$mainclass = str_replace($e, $e_mainclass, $mainclass);
-		$mainclass .= "\n\n\$pqmain = new PQMain;\n\$pqmain->show();";
+		$mainclass .= "\n\n\$pqmain = new PQMain;\n\$pqmain->show();\nqApp::exec();";
 
 		$this->plainText = $mainclass;
 	}

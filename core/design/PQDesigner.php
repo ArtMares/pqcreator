@@ -92,8 +92,8 @@ class PQDesigner extends QMainWindow
 	public function createToolBars()
 	{
 		$topToolBar = new QToolBar($this);
-		$stopAction = $topToolBar->addAction($this->iconpath . 'stop.png', tr('Stop'));
-		$runAction = $topToolBar->addAction($this->iconpath . 'run.png', tr('Run'));
+		$stopAction = $topToolBar->addAction($this->iconsPath . '/stop.png', tr('Stop'));
+		$runAction = $topToolBar->addAction($this->iconsPath . '/run.png', tr('Run'));
 		$stopAction->connect(SIGNAL('triggered(bool)') , $this, SLOT('pqStopAction(bool)'));
 		$runAction->connect(SIGNAL('triggered(bool)') , $this, SLOT('pqRunAction(bool)'));
 		$this->addToolBar(Qt::TopToolBarArea, $topToolBar);
@@ -404,7 +404,6 @@ class PQDesigner extends QMainWindow
 			
 		case QEvent::KeyPress:
 			if ($event->key === 16777223) { // Delete button
-				$this->unselectObject();
 				$this->deleteObject($sender);
 				$this->createPropertiesPanel();
 			}
@@ -538,10 +537,13 @@ class PQDesigner extends QMainWindow
 	public function deleteObject($object)
 	{
 		$childObjects = $object->getChildObjects();
-		foreach($childObjects as $childObject) {
-			unset($this->objHash[$childObject->objectName]);
+		if($childObjects != NULL) {
+			foreach($childObjects as $childObject) {
+				$this->deleteObject($childObject);
+			}
 		}
 
+		$this->unselectObject();
 		$objectName = $object->objectName;
 		unset($this->objHash[$objectName]);
 		$this->objectList->removeItem($this->objectList->itemIndex($objectName));
