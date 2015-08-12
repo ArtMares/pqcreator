@@ -79,11 +79,20 @@ class PQDesigner extends QMainWindow
         $this->codegen->show();
         
         $this->processCheckTimer = new QTimer(300);
-        $this->processCheckTimer->connect(SIGNAL('timeout()'), $this, SLOT('processCheckTimerAction()'));
+        $this->processCheckTimer->onTimer = function($timer, $event) {
+            if($this->runningProcess != null) {
+                $status = proc_get_status($this->runningProcess);
+                if(!$status['running']) {
+                    $this->runningProcess = null;
+                    $this->processCheckTimer->stop();
+                    $this->stopAction->enabled = false;
+                    $this->runAction->enabled = true;
+                }
+            }
+        };
         
         $this->resize(900, 600);
         $this->windowTitle = $projectName . ' - PQCreator';
-        $this->windowTitle = 1;
         $this->objectName = '___pqcreator_mainwidget_';
         
         $this->show();
@@ -100,18 +109,6 @@ class PQDesigner extends QMainWindow
         $this->lastEditedObject->resize(400, 300);
         $this->selectObject($this->lastEditedObject);
         
-    }
-    
-    public function processCheckTimerAction($sender) {
-        if($this->runningProcess != null) {
-            $status = proc_get_status($this->runningProcess);
-            if(!$status['running']) {
-                $this->runningProcess = null;
-                $this->processCheckTimer->stop();
-                $this->stopAction->enabled = false;
-                $this->runAction->enabled = true;
-            }
-        }
     }
     
     public function createFormarea() 
