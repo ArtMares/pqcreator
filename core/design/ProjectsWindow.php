@@ -6,7 +6,7 @@ class ProjectsWindow extends QWidget {
   private $newProjectFD_lineEdit;
   private $user_projects_path;
   private $newProjectName_lineEdit;
-  private $project_dir;
+  private $projectDir;
   
   public function __construct() {
     parent::__construct();
@@ -125,18 +125,31 @@ class ProjectsWindow extends QWidget {
     return $def_project_name;
   }
   
-  private function create_project_dir() {
-    $project_dir = $this->user_projects_path . '/' . $this->newProjectName_lineEdit->text;
+  private function createProjectDir() {
+    $projectDir = $this->user_projects_path . '/' . $this->newProjectName_lineEdit->text;
     
-    if(file_exists($project_dir)
-        || !mkdir($project_dir)) {
-      $messageBox = new QMessageBox;
-      $messageBox->critical(0, tr('Error creating directory'), tr('Cannot create directory') . " `$project_dir`",  tr('Ok'));
+    $messageBox = new QMessageBox;
+    if(file_exists($projectDir)
+        || !mkdir($projectDir)) {
+        
+      $messageBox->critical(0, tr('Error creating directory'), tr('Cannot create directory') . " `$projectDir`",  tr('Ok'));
       $messageBox->free();
       return false;
     }
     
-    $this->project_dir = ___pq_prepare_path($project_dir);
+    $currentPath = QDir::CurrentPath;
+    
+    if(!copy("${currentPath}/pqengine.dll", "${projectDir}/pqengine.dll")
+		|| !copy("${currentPath}/php5ts.dll", "${projectDir}/php5ts.dll")
+		|| !copy("${currentPath}/PQCreator.exe", "${projectDir}/pqengine.exe")
+		|| file_put_contents("${projectDir}/main.php", '<?php') === FALSE) {
+		
+		$messageBox->critical(0, tr('Error creating project data'), tr('Cannot create project core files'),  tr('Ok'));
+		$messageBox->free();
+		return false;
+	}
+    
+    $this->projectDir = ___pq_prepare_path($projectDir);
     return true;
   }
   
@@ -187,7 +200,6 @@ class ProjectsWindow extends QWidget {
       $label->connect( SIGNAL('clicked()'), $button, SLOT('click()') );
     }
     
-    
     $layout = new QHBoxLayout;
     $layout->setContentsMargins(0, 6, 0, 0);
     $layout->addWidget($button);
@@ -197,17 +209,17 @@ class ProjectsWindow extends QWidget {
   }
   
   public function new_QWidget_project($sender) {
-    if($this->create_project_dir()) {
+    if($this->createProjectDir()) {
       $this->hide();
-      $designer = new PQDesigner('QWidget', $this->project_dir);
+      $designer = new PQDesigner('QWidget', $this->projectDir, $this->newProjectName_lineEdit->text);
       $designer->show();
     }
   }
   
   public function new_QMainWindow_project($sender) {
-    if($this->create_project_dir()) {
+    if($this->createProjectDir()) {
       $this->hide();
-      $designer = new PQDesigner('QMainWindow', $this->project_dir);
+      $designer = new PQDesigner('QMainWindow', $this->projectDir, $this->newProjectName_lineEdit->text);
       $designer->show();
     }
   }
