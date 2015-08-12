@@ -388,12 +388,12 @@ class PQDesigner extends QMainWindow
 
     public function testCreate($sender, $x, $y, $globalX, $globalY, $button)
     {
-         $sender->releaseMouse();
+        $sender->releaseMouse();
         $obj = $this->lastEditedObject;
         $widget = $this->isFormarea($obj, $globalX, $globalY);
         if ($obj === $widget) {
             $this->selectObject($obj);
-            return;
+            return true;
         }
 
         if ($widget != NULL) {
@@ -431,11 +431,12 @@ class PQDesigner extends QMainWindow
 
             $this->codegen->updateCode();
             $this->selectObject($obj);
-            return;
+            return true;
         }
         else {
             $this->lastEditedObject = null;
             $this->deleteObject($obj);
+            return false;
         }
     }
 
@@ -606,15 +607,18 @@ class PQDesigner extends QMainWindow
         
         switch ($button) {
         case Qt::LeftButton:
+            $ok = false;
             if($sender->draggable
                 && $sender->moved) {
-                $this->testCreate($sender, $x, $y, $globalX, $globalY, $button);
+                $ok = $this->testCreate($sender, $x, $y, $globalX, $globalY, $button);
             }
             else {
                 $this->selectObject($sender);
             }
             
-            $sender->draggable = false;
+            if($ok) {
+                $sender->draggable = false;
+            }
             
             return true;
         }
