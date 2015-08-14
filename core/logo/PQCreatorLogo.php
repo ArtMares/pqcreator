@@ -19,7 +19,6 @@ class PQCreatorLogo extends QLabel {
         parent::__construct();
         
         /* Init */
-        
         $this->frame = 0;
         $this->frames = 150;
         $this->canBeClosed = true;
@@ -55,28 +54,28 @@ class PQCreatorLogo extends QLabel {
         $this->timer = new QTimer(12);
         $this->timer->running = false;
         $this->timer->onTimer = function() {
-            $this->logoPaw1->y = -$this->screenGeometry["height"] 
-                                    + ($this->bounceOut($this->screenGeometry["height"]+128, 
+            $this->logoPaw1->y = -$this->screenGeometry["height"]/2 
+                                    + ($this->bounceOut($this->y+$this->screenGeometry["height"]/2, 
                                                         $this->frame/$this->frames));
-            
+        
             if($this->frame > 10) 
-                $this->logoPaw5->y = -$this->screenGeometry["height"] 
-                                        + ($this->bounceOut($this->screenGeometry["height"]+128, 
+                $this->logoPaw5->y = -$this->screenGeometry["height"]/2 
+                                        + ($this->bounceOut($this->y+$this->screenGeometry["height"]/2, 
                                                             ($this->frame - 10)/$this->frames ));
             
             if($this->frame > 20) 
-                $this->logoPaw4->y = -$this->screenGeometry["height"] 
-                                        + ($this->bounceOut($this->screenGeometry["height"]+128, 
+                $this->logoPaw4->y = -$this->screenGeometry["height"]/2 
+                                        + ($this->bounceOut($this->y+$this->screenGeometry["height"]/2, 
                                                             ($this->frame - 20)/$this->frames ));
             
             if($this->frame > 30) 
-                $this->logoPaw3->y = -$this->screenGeometry["height"] 
-                                        + ($this->bounceOut($this->screenGeometry["height"]+128,
+                $this->logoPaw3->y = -$this->screenGeometry["height"]/2 
+                                        + ($this->bounceOut($this->y+$this->screenGeometry["height"]/2,
                                                             ($this->frame - 30)/$this->frames));
                                         
             if($this->frame > 40) 
-                $this->logoPaw2->y = -$this->screenGeometry["height"] 
-                                        + ($this->bounceOut($this->screenGeometry["height"]+128, 
+                $this->logoPaw2->y = -$this->screenGeometry["height"]/2 
+                                        + ($this->bounceOut($this->y+$this->screenGeometry["height"]/2, 
                                                             ($this->frame - 40)/$this->frames));
             
             if($this->frame > 220 
@@ -115,6 +114,7 @@ class PQCreatorLogo extends QLabel {
         parent::show();
         $desktop = new QDesktopWidget;
         $screenNumber = $desktop->screenNumber($this);
+        
         $this->screenGeometry = $desktop->screenGeometry($screenNumber);
         
         $this->logoPaw1->move($this->x, -$this->screenGeometry["height"]/2);
@@ -131,6 +131,7 @@ class PQCreatorLogo extends QLabel {
         
         $this->logoPaw5->move($this->x, -$this->screenGeometry["height"]/2);
         $this->logoPaw5->show();
+        
         
         $this->timer->start();
         
