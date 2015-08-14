@@ -15,6 +15,7 @@ set_tr_lang('ru');
 require_once('core/design/PQDesigner.php');
 require_once('core/design/PQDownloader.php');
 require_once('core/design/ProjectsWindow.php');
+require_once('core/logo/PQCreatorLogo.php');
 
 class PQCreator extends QObject {
 	private $projects;
@@ -90,8 +91,11 @@ class PQCreator extends QObject {
 	}
 	
 	public function run() {
-		$this->checkPQPack() ;
-		$this->projects->show();
+		$this->checkPQPack();
+		
+        $logo = new PQCreatorLogo("0.1-alpha1\n(build: 1)");
+        $logo->show();
+        $this->projects->show();
 	}
 }
 

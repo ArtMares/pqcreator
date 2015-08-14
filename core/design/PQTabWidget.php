@@ -158,7 +158,7 @@ class PQTabWidget extends QWidget
         $this->stack->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred, QSizePolicy::TabWidget);
         $this->stack->setFrameShape(QFrame::StyledPanel);
         $this->stack->objectName = '___pq_creator__pqtabwidget_stack_';
-        $this->styleSheet = '#___pq_creator__pqtabwidget_stack_ { margin-top:-2px; border:none; }';
+        $this->styleSheet = '#___pq_creator__pqtabwidget_stack_ { margin-top:-2px; background:#fff; }';
         
         $this->tabbar = new QTabBar($this);
         $this->tabbar->expanding = false;
@@ -171,34 +171,77 @@ class PQTabWidget extends QWidget
         $this->layout->addWidget($this->stack);
     }
 
-    public function addTab($widget, $text, $icon = null)
+    public function addTab($widget, &$codegen, $text, $icon = null)
     {
         $index = (int)$this->tabbar->addTab($text);
         if ($icon != null) {
             $this->tabbar->setTabIcon($index, $icon);
         }
         
-       // $widget->objectName = '___pq_formwidget__centralwidget_';
         $widget->resize(200,200);
-
-        $scrollArea = new QScrollArea;
+        
+        $stackArea = new QWidget;
+        
+        $toolbar = new QWidget($stackArea);
+        
+        $projectButton = new QPushButton($toolbar);
+        $projectButton->text = tr('Project');
+        $projectButton->checkable = true;
+        $projectButton->checked = true;
+        $projectButton->autoExclusive = true;
+        
+        
+        $sourceButton = new QPushButton($toolbar);
+        $sourceButton->text = tr('Source');
+        $sourceButton->checkable = true;
+        $sourceButton->autoExclusive = true;
+       
+        
+        $toolbar_layout = new QHBoxLayout;
+        $toolbar_layout->addWidget($projectButton);
+        $toolbar_layout->addWidget($sourceButton);
+        
+        $toolbar->setLayout($toolbar_layout);
+        
+        
+        $scrollArea_viewport = new QWidget;
+        $scrollArea_viewport->setPalette("#ffffff");
+        $scrollArea_viewport->autoFillBackground = true;
+        $scrollArea_viewport->objectName = '___pq_creator__pqtabwidget_scrollarea_viewport';
+        $scrollArea_viewport->styleSheet = '#___pq_creator__pqtabwidget_scrollarea_viewport > QWidget { padding-top:2px; }';
+        
+        $scrollArea = new QScrollArea($stackArea);
         $scrollArea->objectName = '___pq_creator__pqtabwidget_scrollarea_';
-        
-        $viewport = new QWidget;
-        $viewport->setPalette("#ffffff");
-        $viewport->autoFillBackground = true;
-        $viewport->objectName = '___pq_creator__pqtabwidget_scrollarea_viewport';
-        $viewport->styleSheet = '#___pq_creator__pqtabwidget_scrollarea_viewport > QWidget { padding-top:2px; }';
-        
-        $scrollArea->setViewport($viewport);
-        
+        $scrollArea->setViewport($scrollArea_viewport);
         $scrollArea->setWidget($widget);
-       // $scrollArea->setWidgetResizable(true);
+        $scrollArea->styleSheet = '#___pq_creator__pqtabwidget_scrollarea_ { border: none; }';
         
-       // $formwidget = new PQFormWidget($this->designer, $widget);
-      //  $formwidget->resize(400, 300);
         
-        $this->stack->addWidget($scrollArea);
+        $stack = new QStackedWidget($stackArea);
+        $stack->objectName = '___pq_creator__pqtabwidget_stackarea_stack_';
+        $stack->addWidget($scrollArea);
+        if($codegen != null) $stack->addWidget($codegen);
+        
+        $projectButton->onClicked = function($button, $event) {
+            c('___pq_creator__pqtabwidget_stackarea_stack_')->setCurrentIndex(0);
+           // echo '>'.(int)c('___pq_creator__pqtabwidget_stackarea_stack_')->currentIndex;
+        };
+        
+        $sourceButton->onClicked = function($button, $event) {
+            c('___pq_creator__pqtabwidget_stackarea_stack_')->setCurrentIndex(1);
+           // echo '>'.(int)c('___pq_creator__pqtabwidget_stackarea_stack_')->currentIndex;
+        };
+        
+        
+        
+        $stackArea_layout = new QVBoxLayout;
+        $stackArea_layout->setMargin(0);
+        $stackArea_layout->addWidget($toolbar);
+        $stackArea_layout->addWidget($stack);
+        
+        $stackArea->setLayout($stackArea_layout);
+        
+        $this->stack->addWidget($stackArea);
     }
 
     public function setActiveStackIndex($sender, $index)

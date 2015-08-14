@@ -14,6 +14,32 @@ $r[] = array(
               );
               
 $r[] = array(
+              'title'         => tr('Size policy'),
+              'property'      => 'setSizePolicy(%1,%2)',
+              'type'          => 'combo-list',
+              'list'          => array(
+                                    array(
+                                        'title'         => tr('Vertical size policy'),
+                                        'property'      => '%1',
+                                        'type'          => 'combo',
+                                        'list'          => array(
+                                                                array( 'title' => 'Fixed', 'value' => 'QSizePolicy::Fixed' ),
+                                                                array( 'title' => 'Minimum', 'value' => 'QSizePolicy::Minimum' ),
+                                                            )
+                                        ), 
+                                    array(
+                                        'title'         => tr('Horisontal size policy'),
+                                        'property'      => '%2',
+                                        'type'          => 'combo',
+                                        'list'          => array(
+                                                                array( 'title' => 'Fixed', 'value' => 'QSizePolicy::Fixed' ),
+                                                                array( 'title' => 'Minimum', 'value' => 'QSizePolicy::Minimum' ),
+                                                            )
+                                    )
+                                )
+              );
+              
+$r[] = array(
               'title'         => tr('Width'),
               'property'      => 'width',
               'type'          => 'int'

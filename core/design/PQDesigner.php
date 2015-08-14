@@ -58,6 +58,10 @@ class PQDesigner extends QMainWindow
         $this->projectDir = $projectDir;
         $this->projectName = $projectName;
         
+        $this->codegen = new PQCodeGen($projectParentClass, $this->objHash, '___pq_formwidget__centralwidget_form1');
+        $this->codegen->windowFlags = Qt::Tool;
+        $this->codegen->show();
+        
         $this->createToolBars();
         $this->createMenuBar();
         $this->createComponentsPanel();
@@ -73,10 +77,6 @@ class PQDesigner extends QMainWindow
         
         $this->centralWidget = new QWidget;
         $this->centralWidget->setLayout($this->mainLayout);
-        
-        $this->codegen = new PQCodeGen($projectParentClass, $this->objHash, '___pq_formwidget__centralwidget_form1');
-        $this->codegen->windowFlags = Qt::Tool;
-        $this->codegen->show();
         
         $this->processCheckTimer = new QTimer(300);
         $this->processCheckTimer->onTimer = function($timer, $event) {
@@ -108,7 +108,6 @@ class PQDesigner extends QMainWindow
         $this->lastEditedObject->disabledSels = 'lt,rm,lb,rt,tm';
         $this->lastEditedObject->resize(400, 300);
         $this->selectObject($this->lastEditedObject);
-        
     }
     
     public function createFormarea() 
@@ -120,8 +119,9 @@ class PQDesigner extends QMainWindow
         $widget->objectName = '___pq_formwidget__centralwidget_form1';
         $widget->resize(100,100);
         
-        $this->formarea->addTab($widget, 'Form 1');
-        $this->formarea->addTab(new QWidget, '', 'C:/pqcreator-git/pqcreator/core/design/faenza-icons/new.png');
+        $this->formarea->addTab($widget, $this->codegen, 'Form 1');
+        $null = null;
+        $this->formarea->addTab(new QWidget, $null, '', 'C:/pqcreator-git/pqcreator/core/design/faenza-icons/new.png');
         $this->formarea->objectName = $this->formareaName;
     }
     
@@ -858,6 +858,12 @@ class PQDesigner extends QMainWindow
 
                     $widget->connect(SIGNAL('toggled(bool)') , $this, SLOT('setObjectProperty(bool)'));
                     break;
+                    
+                case 'combo-list':
+                    $widget = new QWidget;
+                    foreach($property['list'] as $listitem) {
+                        
+                    }
                 }
 
                 if ($widget != null) {
