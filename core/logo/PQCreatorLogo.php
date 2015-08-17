@@ -1,5 +1,7 @@
 <?php
 
+require_once('core/design/Updater.php');
+
 class PQCreatorLogo extends QLabel {
     private $timer;
     private $frame;
@@ -13,15 +15,21 @@ class PQCreatorLogo extends QLabel {
     private $logoPaw4;
     private $logoPaw5;
     
+    private $updater;
+    private $server = 'http://phpqt.ru/phpqt-updates';
+    private $updaterResult;
+    
     public $canBeClosed;
     
     public function __construct($version) {
         parent::__construct();
         
         /* Init */
+        $this->updater = new UpdateDSApp;
+        
         $this->frame = 0;
         $this->frames = 150;
-        $this->canBeClosed = true;
+        $this->canBeClosed = false;
         
         $this->windowFlags = Qt::Tool
                             | Qt::WindowStaysOnTopHint
@@ -45,13 +53,13 @@ class PQCreatorLogo extends QLabel {
         $this->logoPaw5 = $this->createPaw($logoPath . '/data/paw-256-5.png', $desktopWidth, $desktopHeight);
         $this->logoPaw1 = $this->createPaw($logoPath . '/data/paw-256-1.png', $desktopWidth, $desktopHeight);
         
-        
         $this->labelVersion = new QLabel($this);
         $this->labelVersion->text = 'Version: ' . $version;
         $this->labelVersion->styleSheet = 'font-size:10px; color:#002040; qproperty-alignment:AlignCenter;';
         
         /* Timer */
-        $this->timer = new QTimer(12);
+        $this->timer = new QTimer;
+        $this->timer->interval = 12;
         $this->timer->running = false;
         $this->timer->onTimer = function() {
             $this->logoPaw1->y = -$this->screenGeometry["height"]/2 
@@ -78,16 +86,21 @@ class PQCreatorLogo extends QLabel {
                                         + ($this->bounceOut($this->y+$this->screenGeometry["height"]/2, 
                                                             ($this->frame - 40)/$this->frames));
             
-            if($this->frame > 220 
-                && $this->canBeClosed) {
-                $this->timer->stop();
-                $this->timer->free();
-                $this->logoPaw1->close();
-                $this->logoPaw2->close();
-                $this->logoPaw3->close();
-                $this->logoPaw4->close();
-                $this->logoPaw5->close();
-                $this->close();
+            if($this->frame > 220 ) {
+                //$this->timer->stop();
+                
+                $this->checkUpdates();
+                
+                if($this->canBeClosed) {
+                    $this->timer->free();
+                    $this->logoPaw1->close();
+                    $this->logoPaw2->close();
+                    $this->logoPaw3->close();
+                    $this->logoPaw4->close();
+                    $this->logoPaw5->close();
+                    $this->close();
+                }
+                
             }
             
             $this->frame++;
@@ -112,6 +125,7 @@ class PQCreatorLogo extends QLabel {
     
     public function show() {
         parent::show();
+        
         $desktop = new QDesktopWidget;
         $screenNumber = $desktop->screenNumber($this);
         
@@ -132,11 +146,70 @@ class PQCreatorLogo extends QLabel {
         $this->logoPaw5->move($this->x, -$this->screenGeometry["height"]/2);
         $this->logoPaw5->show();
         
-        
         $this->timer->start();
         
         $this->labelVersion->move($this->width/2 - $this->labelVersion->width/2, 210);
+        
+        $this->updaterResult = $this->updater->check($this->server);
+        
         return qApp::exec();
+    }
+    
+    private function checkUpdates() {
+        /* Updater */
+        if($this->updaterResult === true) {
+            $needUpdate = false;
+            
+            $vcontrol = c(PQNAME)->pqpackPath . '/update.info.xml';
+            
+            $currentVersion = 'unknown';
+            
+            if(!file_exists($vcontrol)) {
+                $needUpdate = true;
+            }
+            else {
+                $preUpdater = new UpdateDSApp;
+                $result = $preUpdater->check($vcontrol);
+                
+                if($result === true) {
+                    $currentVersion = $preUpdater->updateInfo("version") . ' ' . $preUpdater->updateInfo("date");
+                }
+            }
+            
+            $lastVersion = $this->updater->updateInfo("version") . ' ' . $this->updater->updateInfo("date");
+            
+            if($needUpdate === true) {
+                $msgbox = new QMessageBox(QMessageBox::Information, tr('PQCreator updater'),
+                                        tr('Update for package %s is available!')
+                                        . "\r\n" . "\r\n"
+                                        . tr('Current version: ') . $currentVersion 
+                                        . "\r\n"
+                                        . tr('Available version: ') . $lastVersion
+                                        . "\r\n" . "\r\n"
+                                        . tr('Update package?'),
+                                        QMessageBox::Ok|QMessageBox::No,
+                                        0,
+                                        Qt::WindowStaysOnTopHint); 
+                                        
+                $answer = $msgbox->exec();
+                
+                if($answer == QMessageBox::Ok) {
+                    $msgbox2 = new QMessageBox(QMessageBox::Warning, tr('PQCreator updater'),
+                                        tr('Sorry, the updates not supported yet... :-('),
+                                        QMessageBox::Ok,
+                                        0,
+                                        Qt::WindowStaysOnTopHint); 
+                                        
+                    $answer = $msgbox2->exec();
+                }
+                
+                $this->canBeClosed = true;
+            }
+        } 
+        else {
+          //  error connection
+        }
+        
     }
   
     public function bounceOut($d, $n) {

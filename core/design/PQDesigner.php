@@ -5,7 +5,7 @@ require_once ("PQCodeGen.php");
 
 class PQDesigner extends QMainWindow
 {
-    private $iconpath;
+    private $iconsPath;
     private $mainLayout;
     private $componentsLayout;
     private $componentsPanel;
@@ -50,6 +50,7 @@ class PQDesigner extends QMainWindow
     public function __construct($projectParentClass = '', $projectDir = '', $projectName = '')
     {
         parent::__construct();
+        
         
         $this->objHash = array();
         $this->iconsPath = c(PQNAME)->iconsPath;

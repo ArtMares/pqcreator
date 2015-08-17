@@ -13,8 +13,9 @@ class PQCodeGen extends QTextEdit {
     public function __construct($projectParentClass, &$objHash, $nullParentName)
     {
         parent::__construct();
+        
         $this->projectParentClass = $projectParentClass;
-        $this->objHash = & $objHash;
+        $this->objHash = &$objHash;
         $this->nullParentName = $nullParentName;
         $this->pq_globals = c(PQNAME);
         $this->move(0, 0);
@@ -98,6 +99,7 @@ class PQCodeGen extends QTextEdit {
     
         $lastIndex = count($this->sortedObjHash) - 1;
         $index = 0;
+        
         foreach($this->sortedObjHash as $index => $objHash) {
             $objectName = $objHash['objectName'];
             $objData = $objHash['objData'];
