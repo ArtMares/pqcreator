@@ -761,7 +761,7 @@ class PQDesigner extends QMainWindow
     }
 
     
-    private function createRootItemWidget($property) {
+    private function createRootItemWidget($property, $tree, $itemIndex) {
         $widget = null;
         
         switch ($property['type']) {
@@ -806,11 +806,22 @@ class PQDesigner extends QMainWindow
                 break;
                 
             case 'combo-list':
-                $widget = new QWidget;
-                foreach($property['list'] as $listitem) {
-                    //echo $listitem['title'];
-                    $childItemIndex = $tree->addItem( $itemIndex, $listitem['title'] );
+                foreach($property['list'] as $listItemProperty) {
+                    $childItemIndex = $tree->addItem( $itemIndex, $listItemProperty['title'] );
+                    $childItemWidget = $this->createRootItemWidget($listItemProperty, $tree, $itemIndex);
+                    
+                    if ($childItemWidget != null) {
+                        $childItemWidget->__pq_property_ = $property['property'];
+                        $childItemWidget->__pq_propertyType_ = $property['type'];
+                        $childItemWidget->objectName = "__pq_property_combo_"
+                                                        . $property['property']
+                                                        . "_"
+                                                        . $listItemProperty['property'];
+                        
+                        $tree->setItemWidget($childItemIndex, 1, $childItemWidget);
+                    }
                 }
+                break;
                 
             case 'combo':
                 $widget = new QComboBox;
@@ -835,7 +846,8 @@ class PQDesigner extends QMainWindow
                 }
                 
                 $widget->connect(SIGNAL('currentIndexChanged(int)') , $this, SLOT('setObjectProperty(int)'));
-            }
+                break;
+        }
             
         return $widget;
     }
@@ -903,72 +915,11 @@ class PQDesigner extends QMainWindow
                     break;
                 }
 
-                switch ($property['type']) {
-                case 'mixed':
-                case 'int':
-                    $widget = new QLineEdit;
-                    if (isset($property['value']) && !$defaultPropertiesLoaded) {
-                        $widget->text = $property['value'];
-                    }
-                    else {
-                        $widget->text = $object->$property['property'];
-                    }
-
-                    // set validator if section exists
-
-                    if (isset($property['validator'])) {
-                        $widget->setRegExpValidator($property['validator']);
-                    }
-                    else {
-
-                        // if property type is `int` and validator section not exists,
-                        // then set a default validator for integers
-
-                        if ($property['type'] == 'int') {
-                            $widget->setRegExpValidator('[0-9]*');
-                        }
-                    }
-
-                    $widget->connect(SIGNAL('textChanged(QString)') , $this, SLOT('setObjectProperty(QString)'));
-                    break;
-
-                case 'bool':
-                    $widget = new QCheckBox;
-                    if (isset($property['value']) && !$defaultPropertiesLoaded) {
-                        $widget->checked = $property['value'];
-                    }
-                    else {
-                        $widget->checked = $object->$property['property'];
-                    }
-
-                    $widget->connect(SIGNAL('toggled(bool)') , $this, SLOT('setObjectProperty(bool)'));
-                    break;
-                    
-                case 'combo-list':
-                    //$widget = new QWidget;
-                    foreach($property['list'] as $listItemProperty) {
-                        //echo $listitem['title'];
-                        $childItemIndex = $tree->addItem( $itemIndex, $listItemProperty['title'] );
-                        $childItemWidget = $this->createRootItemWidget($listItemProperty);
-                        
-                        if ($childItemWidget != null) {
-                            $childItemWidget->__pq_property_ = $property['property'];
-                            $childItemWidget->__pq_propertyType_ = $property['type'];
-                            $childItemWidget->objectName = "__pq_property_combo_"
-                                                            . $property['property']
-                                                            . "_"
-                                                            . $listItemProperty['property'];
-                            
-                            $tree->setItemWidget($childItemIndex, 1, $childItemWidget);
-                        }
-                
-                    }
-                }
+                $widget = $this->createRootItemWidget($property, $tree, $itemIndex);
 
                 if ($widget != null) {
                     $widget->__pq_property_ = $property['property'];
                     $widget->__pq_propertyType_ = $property['type'];
-                    //$table->setCellWidget($row, 1, $widget);
                     $tree->setItemWidget($itemIndex, 1, $widget);
                 }
 
