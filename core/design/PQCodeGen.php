@@ -91,7 +91,7 @@ class PQCodeGen extends QTextEdit {
         $fn___construct = "${s1}public function __construct() {\n$e\n${s1}}";
         $e_fn___construct = "${s2}parent::__construct();\n${s2}\$this->initComponents();";
         
-        $fn_initComponents = "${s2}private function initComponents() {\n$e${s1}}";
+        $fn_initComponents = "${s1}private function initComponents() {\n$e${s1}}";
         $e_fn_initComponents = '';
         
         $fn_run = "${s1}public function run() {\n$e\n${s1}}";
@@ -125,6 +125,7 @@ class PQCodeGen extends QTextEdit {
                 $e_fn_initComponents .= "${s2}\$this->${objectName}->setLayout(new $layoutClass);\n";
             }
             
+            // Properties 
             if(isset($objData->properties)) {
                 foreach($objData->properties as $property) {
                     $value = $objData->object->$property;
@@ -145,6 +146,13 @@ class PQCodeGen extends QTextEdit {
                         $e_fn_initComponents .= "${s2}\$this->${objectName}->${property} = ${value};\n";
                         break;
                     }
+                }
+            }
+            
+            // Methods 
+            if(isset($objData->methods)) {
+                foreach($objData->methods as $method) {
+                    $e_fn_initComponents .= "${s2}\$this->${objectName}->$method;\n";
                 }
             }
             
