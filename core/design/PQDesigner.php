@@ -369,7 +369,7 @@ class PQDesigner extends QMainWindow
         
         $obj->show();
         
-        $objDataArr = array( 'object' => $obj, 'properties' => array() );
+        $objDataArr = array( 'object' => $obj, 'properties' => array(), 'methods' => array() );
         $objDataArr['properties'][] = 'objectName';
         $objDataArr['properties'][] = 'x';
         $objDataArr['properties'][] = 'y';
@@ -468,6 +468,14 @@ class PQDesigner extends QMainWindow
         $this->sizeCtrl = new PQSizeCtrl($this->codegen, $object->parent, $object, $this->gridSize);
         $this->loadObjectProperties($object);
         $this->objectList->setCurrentText($object->objectName);
+        $object->setFocus();
+    }
+    
+    public function reselectObject()
+    {
+        $this->unselectObject();
+        $object = $this->lastEditedObject;
+        $this->sizeCtrl = new PQSizeCtrl($this->codegen, $object->parent, $object, $this->gridSize);
         $object->setFocus();
     }
 
@@ -586,6 +594,7 @@ class PQDesigner extends QMainWindow
     {
         $this->unselectObject();
         
+        
         switch ($button) {
         case Qt::LeftButton:
             $this->lastEditedObject = $sender;
@@ -615,6 +624,7 @@ class PQDesigner extends QMainWindow
             }
             else {
                 $this->selectObject($sender);
+                $ok = true;
             }
             
             if($ok) {
@@ -750,6 +760,86 @@ class PQDesigner extends QMainWindow
         $this->codegen->updateCode();
     }
 
+    
+    private function createRootItemWidget($property) {
+        $widget = null;
+        
+        switch ($property['type']) {
+            case 'mixed':
+            case 'int':
+                $widget = new QLineEdit;
+                if (isset($property['value']) && !$defaultPropertiesLoaded) {
+                    $widget->text = $property['value'];
+                }
+                else {
+                    $widget->text = $object->$property['property'];
+                }
+
+                // set validator if section exists
+
+                if (isset($property['validator'])) {
+                    $widget->setRegExpValidator($property['validator']);
+                }
+                else {
+
+                    // if property type is `int` and validator section not exists,
+                    // then set a default validator for integers
+
+                    if ($property['type'] == 'int') {
+                        $widget->setRegExpValidator('[0-9]*');
+                    }
+                }
+
+                $widget->connect(SIGNAL('textChanged(QString)') , $this, SLOT('setObjectProperty(QString)'));
+                break;
+
+            case 'bool':
+                $widget = new QCheckBox;
+                if (isset($property['value']) && !$defaultPropertiesLoaded) {
+                    $widget->checked = $property['value'];
+                }
+                else {
+                    $widget->checked = $object->$property['property'];
+                }
+
+                $widget->connect(SIGNAL('toggled(bool)') , $this, SLOT('setObjectProperty(bool)'));
+                break;
+                
+            case 'combo-list':
+                $widget = new QWidget;
+                foreach($property['list'] as $listitem) {
+                    //echo $listitem['title'];
+                    $childItemIndex = $tree->addItem( $itemIndex, $listitem['title'] );
+                }
+                
+            case 'combo':
+                $widget = new QComboBox;
+                
+                if(isset($property['list']) 
+                    && is_array($property['list'])) {
+                    
+                    $index = 0;
+                    foreach($property['list'] as $list) {
+                        if(isset($list['title'])
+                            && isset($list['value'])) {
+                            
+                            $cPropertyValue = "cPropertyValue_$index";
+                            $qvalue = "__pq_property_qvalue_$index";
+                            
+                            $widget->addItem($list['title']);
+                            $widget->$cPropertyValue = $list['value'];
+                            $widget->$qvalue = $list['qvalue'];
+                            $index++;
+                        }
+                    }
+                }
+                
+                $widget->connect(SIGNAL('currentIndexChanged(int)') , $this, SLOT('setObjectProperty(int)'));
+            }
+            
+        return $widget;
+    }
+    
     // TODO: добавить кэширование!
     public function loadObjectProperties($object)
     {
@@ -779,24 +869,18 @@ class PQDesigner extends QMainWindow
         }
 
         // Отображаем все свойства на панели
-
+        $tree = new QTreeWidget($this->propertiesPanel);
+        $tree->columnCount = 2;
+        $tree->setHeaderLabels( array( tr('Property'), tr('Value') ) );
+        
         foreach($properties as $c => $p) {
-            $label = new QLabel($this->propertiesPanel);
-            $label->text = $c;
-            $label->styleSheet = 'font-weight:bold;';
-            
-            $table = new QTableWidget($this->propertiesPanel);
-            $table->addColumns(2);
-            $table->setHorizontalHeaderText(0, tr('Property'));
-            $table->setHorizontalHeaderText(1, tr('Value'));
-            $table->verticalHeaderVisible = false;
-            
             $defaultPropertiesLoaded = $object->defaultPropertiesLoaded;
+            $rootItemIndex = $tree->addRootItem($c);
+            $tree->setFirstItemColumnSpanned($rootItemIndex, true);
+            $tree->expandItem($rootItemIndex);
             
             foreach($p as $property) {
-                $row = $table->rowCount();
-                $table->addRow();
-                $table->setTextAt($row, 0, $property['title']);
+                $itemIndex = $tree->addItem( $rootItemIndex, array($property['title'], '') );
                 $widget = null;
                 
                 switch ($property['property']) {
@@ -861,15 +945,31 @@ class PQDesigner extends QMainWindow
                     break;
                     
                 case 'combo-list':
-                    $widget = new QWidget;
-                    foreach($property['list'] as $listitem) {
+                    //$widget = new QWidget;
+                    foreach($property['list'] as $listItemProperty) {
+                        //echo $listitem['title'];
+                        $childItemIndex = $tree->addItem( $itemIndex, $listItemProperty['title'] );
+                        $childItemWidget = $this->createRootItemWidget($listItemProperty);
                         
+                        if ($childItemWidget != null) {
+                            $childItemWidget->__pq_property_ = $property['property'];
+                            $childItemWidget->__pq_propertyType_ = $property['type'];
+                            $childItemWidget->objectName = "__pq_property_combo_"
+                                                            . $property['property']
+                                                            . "_"
+                                                            . $listItemProperty['property'];
+                            
+                            $tree->setItemWidget($childItemIndex, 1, $childItemWidget);
+                        }
+                
                     }
                 }
 
                 if ($widget != null) {
                     $widget->__pq_property_ = $property['property'];
-                    $table->setCellWidget($row, 1, $widget);
+                    $widget->__pq_propertyType_ = $property['type'];
+                    //$table->setCellWidget($row, 1, $widget);
+                    $tree->setItemWidget($itemIndex, 1, $widget);
                 }
 
                 /* TODO: Не помню для чего это, но вроде оно реализовано в setObjectProperty() =D
@@ -888,7 +988,7 @@ class PQDesigner extends QMainWindow
             }
 
             $this->propertiesLayout->addWidget($label);
-            $this->propertiesLayout->addWidget($table);
+            $this->propertiesLayout->addWidget($tree);
         }
 
         if (!$defaultPropertiesLoaded) {
@@ -899,6 +999,7 @@ class PQDesigner extends QMainWindow
     public function setObjectProperty($sender, $value)
     {
         $property = $sender->__pq_property_;
+        
         $object = $this->lastEditedObject;
         $objectName = $object->objectName;
         
@@ -910,11 +1011,49 @@ class PQDesigner extends QMainWindow
             $objectName = $value;
         }
 
-        if (!in_array($property, $this->objHash[$objectName]->properties)) {
-            $this->objHash[$objectName]->properties[] = $property;
+        // Methods
+        if($sender->__pq_propertyType_ == 'combo-list') {
+            preg_match_all('/(\%[0-9])/', $property, $args);
+            
+            if(is_array($args) 
+                && isset($args[1])) {
+                
+                $args = $args[1];
+                $argc = count($args);
+                $preparedArgs = array();
+                
+                $method = explode('(',$property)[0];
+                $preparedMethod = $property;
+                for($argnum = 0; $argnum < $argc; $argnum++) {
+                    $arg = $args[$argnum];
+                    $arg_widget = c("__pq_property_combo_${property}_$arg");
+                    $arg_widget_index = $arg_widget->currentIndex;
+                    
+                    $cPropertyValue = "cPropertyValue_" . $arg_widget_index;
+                    $qvalue = "__pq_property_qvalue_" . $arg_widget_index;
+                    
+                    $preparedMethod = str_replace("%$argnum", $arg_widget->$qvalue, $preparedMethod);
+                    $preparedArgs[] = $arg_widget->$cPropertyValue;
+                }
+                
+                $object->__call( $method, $preparedArgs );
+                
+                $this->objHash[$objectName]->methods[$method] = $preparedMethod;
+                $this->reselectObject();
+            }
+            
+            else return;
         }
+        
+        // Properties
+        else {
+            if (!in_array($property, $this->objHash[$objectName]->properties)) {
+                $this->objHash[$objectName]->properties[] = $property;
+            }
 
-        $object->$property = $value;
+            $object->$property = $value;
+        }
+        
         $this->codegen->updateCode();
     }
 }
