@@ -840,6 +840,11 @@ class PQDesigner extends QMainWindow
                             $widget->addItem($list['title']);
                             $widget->$cPropertyValue = $list['value'];
                             $widget->$qvalue = $list['qvalue'];
+                            
+                            if(isset($property['defaultIndex'])) {
+                                $widget->currentIndex = $property['defaultIndex'];
+                            }
+                            
                             $index++;
                         }
                     }

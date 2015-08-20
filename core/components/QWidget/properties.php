@@ -23,24 +23,25 @@ $r[] = array(
                                         'property'      => '%0',
                                         'type'          => 'combo',
                                         'list'          => array(
-                                                                array( 'title' => 'Fixed', 'value' => QSizePolicy::Fixed, 'qvalue' => 'QSizePolicy::Fixed' )
+                                                                array( 'title' => 'Fixed', 'value' => QSizePolicy::Fixed, 'qvalue' => 'QSizePolicy::Fixed' ),
                                                                 array( 'title' => 'Minimum', 'value' => QSizePolicy::Minimum, 'qvalue' => 'QSizePolicy::Minimum'),
                                                                 array( 'title' => 'Maximum', 'value' => QSizePolicy::Maximum, 'qvalue' => 'QSizePolicy::Maximum'),
-                                                                array( 'title' => 'Preffered', 'value' => QSizePolicy::Preffered, 'qvalue' => 'QSizePolicy::Preffered'),
+                                                                array( 'title' => 'Preferred', 'value' => QSizePolicy::Preferred, 'qvalue' => 'QSizePolicy::Preferred'),
                                                                 array( 'title' => 'Expanding', 'value' => QSizePolicy::Expanding, 'qvalue' => 'QSizePolicy::Expanding'),
                                                                 array( 'title' => 'Ignored', 'value' => QSizePolicy::Ignored, 'qvalue' => 'QSizePolicy::Ignored')
                                                             ),
                                         'defaultIndex'  => 1
-                                        ), 
+                                        ),
+                                        
                                     array(
                                         'title'         => tr('Vertical size policy'),
                                         'property'      => '%1',
                                         'type'          => 'combo',
                                         'list'          => array(
-                                                                array( 'title' => 'Fixed', 'value' => QSizePolicy::Fixed, 'qvalue' => 'QSizePolicy::Fixed' )
+                                                                array( 'title' => 'Fixed', 'value' => QSizePolicy::Fixed, 'qvalue' => 'QSizePolicy::Fixed' ),
                                                                 array( 'title' => 'Minimum', 'value' => QSizePolicy::Minimum, 'qvalue' => 'QSizePolicy::Minimum'),
                                                                 array( 'title' => 'Maximum', 'value' => QSizePolicy::Maximum, 'qvalue' => 'QSizePolicy::Maximum'),
-                                                                array( 'title' => 'Preffered', 'value' => QSizePolicy::Preffered, 'qvalue' => 'QSizePolicy::Preffered'),
+                                                                array( 'title' => 'Preferred', 'value' => QSizePolicy::Preferred, 'qvalue' => 'QSizePolicy::Preferred'),
                                                                 array( 'title' => 'Expanding', 'value' => QSizePolicy::Expanding, 'qvalue' => 'QSizePolicy::Expanding'),
                                                                 array( 'title' => 'Ignored', 'value' => QSizePolicy::Ignored, 'qvalue' => 'QSizePolicy::Ignored')
                                                             ),
