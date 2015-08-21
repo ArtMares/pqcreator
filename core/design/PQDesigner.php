@@ -106,7 +106,7 @@ class PQDesigner extends QMainWindow
         $this->lastEditedObject->draggable = false;
         $this->lastEditedObject->movable = false;
         $this->lastEditedObject->isMainWidget = true;
-        $this->lastEditedObject->disabledSels = 'lt,rm,lb,rt,tm';
+        $this->lastEditedObject->disabledSels = 'lt,lm,lb,rt,tm';
         $this->lastEditedObject->resize(400, 300);
         $this->selectObject($this->lastEditedObject);
     }
@@ -790,7 +790,7 @@ class PQDesigner extends QMainWindow
                     }
                 }
 
-                $widget->connect(SIGNAL('textChanged(QString)') , $this, SLOT('setObjectProperty(QString)'));
+                $widget->connect( SIGNAL('textChanged(QString)'), $this, SLOT('setObjectProperty(QString)') );
                 break;
 
             case 'bool':
@@ -802,7 +802,7 @@ class PQDesigner extends QMainWindow
                     $widget->checked = $object->$property['property'];
                 }
 
-                $widget->connect(SIGNAL('toggled(bool)') , $this, SLOT('setObjectProperty(bool)'));
+                $widget->connect( SIGNAL('toggled(bool)'), $this, SLOT('setObjectProperty(bool)') );
                 break;
                 
             case 'combo-list':
@@ -850,7 +850,7 @@ class PQDesigner extends QMainWindow
                     }
                 }
                 
-                $widget->connect(SIGNAL('currentIndexChanged(int)') , $this, SLOT('setObjectProperty(int)'));
+                $widget->connect( SIGNAL('currentIndexChanged(int)'), $this, SLOT('setObjectProperty(int)') );
                 break;
         }
             
