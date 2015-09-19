@@ -143,7 +143,7 @@ class PQTabWidget extends QWidget
     
     private $designer;
     
-    public function __construct($designer, $parent = 0)
+    public function __construct(&$designer, $parent = 0)
     {
         if ($parent == 0) parent::__construct();
         else parent::__construct($parent);
@@ -151,6 +151,7 @@ class PQTabWidget extends QWidget
         $this->designer = $designer;
         
         $this->layout = new QVBoxLayout;
+        $this->layout->margin = 1;
         $this->layout->spacing = 0;
         
         $this->stack = new QStackedWidget($this);
@@ -170,18 +171,12 @@ class PQTabWidget extends QWidget
         $this->layout->addWidget($this->tabbar);
         $this->layout->addWidget($this->stack);
     }
+    
+    public function setTabText($index, $text) {
+        $this->tabbar->setTabText($index, $text);
+    }
 
-    public function addTab($widget, &$codegen, $text, $icon = null)
-    {
-        $index = (int)$this->tabbar->addTab($text);
-        if ($icon != null) {
-            $this->tabbar->setTabIcon($index, $icon);
-        }
-        
-        $widget->resize(200,200);
-        
-        $stackArea = new QWidget;
-        
+    private function createToolBar($stackArea, $stack) {
         $toolbar = new QWidget($stackArea);
         
         $projectButton = new QPushButton($toolbar);
@@ -190,12 +185,29 @@ class PQTabWidget extends QWidget
         $projectButton->checked = true;
         $projectButton->autoExclusive = true;
         
+        $projectButton->onClicked = function($button, $event) use($stack) {
+            $stack->setCurrentIndex(0);
+            
+            $codegen = $stack->widget(1);
+            if($codegen != null) {
+                $codegen->disableRules();
+            }
+        };
         
         $sourceButton = new QPushButton($toolbar);
         $sourceButton->text = tr('Source');
         $sourceButton->checkable = true;
         $sourceButton->autoExclusive = true;
-       
+        
+        $sourceButton->onClicked = function($button, $event) use($stack) {
+            $stack->setCurrentIndex(1);
+            
+            $codegen = $stack->widget(1);
+            if($codegen != null) {
+                $codegen->enableRules();
+                $codegen->rehighlight();
+            }
+        };
         
         $toolbar_layout = new QHBoxLayout;
         $toolbar_layout->addWidget($projectButton);
@@ -203,10 +215,20 @@ class PQTabWidget extends QWidget
         
         $toolbar->setLayout($toolbar_layout);
         
+        return $toolbar;
+    }
+    
+    public function addTab($widget, &$codegen, $text, $icon = null)
+    {
+        $index = $this->tabbar->addTab($text);
+        if ($icon != null) {
+            $this->tabbar->setTabIcon($index, $icon);
+        }
+        
+        $stackArea = new QWidget;
         
         $scrollArea_viewport = new QWidget;
         $scrollArea_viewport->setPalette("#ffffff");
-        $scrollArea_viewport->autoFillBackground = true;
         $scrollArea_viewport->objectName = '___pq_creator__pqtabwidget_scrollarea_viewport';
         $scrollArea_viewport->styleSheet = '#___pq_creator__pqtabwidget_scrollarea_viewport > QWidget { padding-top:2px; }';
         
@@ -216,27 +238,20 @@ class PQTabWidget extends QWidget
         $scrollArea->setWidget($widget);
         $scrollArea->styleSheet = '#___pq_creator__pqtabwidget_scrollarea_ { border: none; }';
         
+        $widget->resize(300,300);
+        $widget->isFormAreaWidget = true;
+        $widget->tabIndex = $index;
         
         $stack = new QStackedWidget($stackArea);
         $stack->objectName = '___pq_creator__pqtabwidget_stackarea_stack_';
         $stack->addWidget($scrollArea);
         if($codegen != null) $stack->addWidget($codegen);
         
-        $projectButton->onClicked = function($button, $event) {
-            c('___pq_creator__pqtabwidget_stackarea_stack_')->setCurrentIndex(0);
-           // echo '>'.(int)c('___pq_creator__pqtabwidget_stackarea_stack_')->currentIndex;
-        };
-        
-        $sourceButton->onClicked = function($button, $event) {
-            c('___pq_creator__pqtabwidget_stackarea_stack_')->setCurrentIndex(1);
-           // echo '>'.(int)c('___pq_creator__pqtabwidget_stackarea_stack_')->currentIndex;
-        };
-        
-        
+        // $toolbar = $this->createToolBar($stackArea, $stack);
         
         $stackArea_layout = new QVBoxLayout;
         $stackArea_layout->setMargin(0);
-        $stackArea_layout->addWidget($toolbar);
+        // $stackArea_layout->addWidget($toolbar);
         $stackArea_layout->addWidget($stack);
         
         $stackArea->setLayout($stackArea_layout);
@@ -246,13 +261,27 @@ class PQTabWidget extends QWidget
 
     public function setActiveStackIndex($sender, $index)
     {
-        $index = (int)$index;
-        if ($index == $this->stack->count() - 1) {
+        $tabCount = $this->stack->count;
+        
+        if ($index == $tabCount-1) {
+            $widget = new QWidget;
+            $widget->objectName = '___pq_formwidget__centralwidget_form';// . $tabCount;
+            $windowTitle = "Form " . $tabCount;
+            
             $this->tabbar->currentIndex = 0;
-            echo tr('Cannot create new form yet');
-        }
-        else {
-            $this->stack->currentIndex = $index;
-        }
+            $null = null;
+            $this->addTab($widget, $null, $windowTitle);
+            $this->tabbar->moveTab($tabCount, $index);
+            $this->tabbar->currentIndex = $index;
+            
+            $widget->tabIndex = $index;
+            
+            $this->designer->createForm($widget, "QWidget", $windowTitle);
+            return;
+        } 
+        
+        // из-за перемещения вкладок (moveTab), 
+        // индексы стака не соответствуют индексам вкладок
+        $this->stack->currentIndex = $index == 0 ? 0 : $index + 1;
     }
 }

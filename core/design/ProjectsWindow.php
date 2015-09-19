@@ -140,14 +140,14 @@ class ProjectsWindow extends QWidget {
     $currentPath = QDir::CurrentPath;
     
     if(!copy("${currentPath}/pqengine.dll", "${projectDir}/pqengine.dll")
-		|| !copy("${currentPath}/php5ts.dll", "${projectDir}/php5ts.dll")
-		|| !copy("${currentPath}/PQCreator.exe", "${projectDir}/pqengine.exe")
-		|| file_put_contents("${projectDir}/main.php", '<?php') === FALSE) {
-		
-		$messageBox->critical(0, tr('Error creating project data'), tr('Cannot create project core files'),  tr('Ok'));
-		$messageBox->free();
-		return false;
-	}
+        || !copy("${currentPath}/php5ts.dll", "${projectDir}/php5ts.dll")
+        || !copy("${currentPath}/PQCreator.exe", "${projectDir}/pqengine.exe")
+        || file_put_contents("${projectDir}/main.php", '<?php') === FALSE) {
+        
+        $messageBox->critical(0, tr('Error creating project data'), tr('Cannot create project core files'),  tr('Ok'));
+        $messageBox->free();
+        return false;
+    }
     
     $this->projectDir = ___pq_prepare_path($projectDir);
     return true;
@@ -157,18 +157,20 @@ class ProjectsWindow extends QWidget {
     if(empty(trim($this->user_projects_path))) {
       // TODO: replace
       // $c_def_dir = explode(':',  __DIR__)[0] . ':/PQProjects_tmp'; // sets the value of $c_def_dir to [C|D|E|...]:/PQProjects_tmp
-      $c_def_dir = QDir::CurrentPath . '/PQProjects_tmp';
+      $c_def_dir = c(PQNAME)->currentPath . '/PQProjects_tmp';
       $def_dir = $c_def_dir;
       
       // Check that the PATH is not a file
-      for($index = 1; file_exists($def_dir) && is_file($def_dir); $index++) {
+      for($index = 1; file_exists($def_dir) 
+            && is_file($def_dir); $index++) {
         $def_dir = $c_def_dir.$index;
       }
       
       // Create a directory if not exists
-      if(!file_exists($def_dir) && !mkdir($def_dir)) {
+      if(!file_exists($def_dir) 
+            && !mkdir($def_dir)) {
         $messageBox = new QMessageBox;
-        $messageBox->critical(0, tr('Error creating directory'), tr('Cannot create directory') . " `$def_dir`",  tr('Ok'));
+        $messageBox->critical(0, tr('Error creating directory'), sprintf(tr('Cannot create directory `%s`'), u($def_dir)),  tr('Ok'));
         $messageBox->free();
         return false;
       }
@@ -190,14 +192,13 @@ class ProjectsWindow extends QWidget {
     
     $label = new QLabel($widget);
     $label->icon = $this->iconsPath . "/$icon";
-    $label->setIconSize(32, 32);
     $label->resize(32, 32);
     $label->enabled = $enabled;
     $label->move(10, 0);
     
     if(!empty($slot)) {
-      $button->connect( SIGNAL('clicked()'), $this, $slot );
-      $label->connect( SIGNAL('clicked()'), $button, SLOT('click()') );
+      $button->connect( SIGNAL('clicked(bool)'), $this, $slot );
+      $label->connect( SIGNAL('mouseClicked()'), $button, SLOT('click()') );
     }
     
     $layout = new QHBoxLayout;

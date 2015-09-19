@@ -41,7 +41,7 @@ class PQCreatorLogo extends QLabel {
         
         $this->resize(256, 256);
         
-        $logoPath = dirname(__FILE__);
+        $logoPath = __DIR__;
         
         $logoCircle = new QLabel($this);
         $logoCircle->resize(256, 256);
@@ -87,8 +87,6 @@ class PQCreatorLogo extends QLabel {
                                                             ($this->frame - 40)/$this->frames));
             
             if($this->frame > 220 ) {
-                //$this->timer->stop();
-                
                 $this->checkUpdates();
                 
                 if($this->canBeClosed) {

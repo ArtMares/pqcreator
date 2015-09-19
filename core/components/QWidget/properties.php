@@ -1,6 +1,8 @@
 <?php
 
 $r = array();
+$r_ex = array();
+
 $r[] = array(
               'title'         => tr('X'),
               'property'      => 'x',
@@ -118,5 +120,27 @@ $r[] = array(
               'type'          => 'mixed'
               );
               
-              
+$r_ex[] = array(
+                'title'       => tr('Window Title'),
+                'property'    => 'windowTitle',
+                'type'        => 'mixed'
+                );
+                
+$r_ex[] = array(
+                'title'       => tr('Window Flags'),
+                'property'    => 'windowFlags',
+                'type'        => 'Qt::WindowFlags'
+                );
+                
+$r_ex[] = array(
+                'title'       => tr('Window Opacity'),
+                'property'    => 'windowOpacity',
+                'type'        => 'double'
+                );
+                
+$r_ex[] = array(
+                'title'       => tr('Window Modality'),
+                'property'    => 'windowModality',
+                'type'        => 'Qt::WindowModality'
+                );
               

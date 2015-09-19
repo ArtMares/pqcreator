@@ -47,9 +47,8 @@ class PQSizeCtrl extends QObject
         
         $this->updateSels();
     }
-
-    public function __destruct()
-    {
+    
+    public function free() {
         $this->lt->free();
         $this->lb->free();
         $this->lm->free();
@@ -58,6 +57,7 @@ class PQSizeCtrl extends QObject
         $this->rm->free();
         $this->tm->free();
         $this->bm->free();
+        parent::free();
     }
 
     public function createSel($selName, $cursor)

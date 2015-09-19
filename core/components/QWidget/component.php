@@ -1,5 +1,6 @@
 <?php
 
+$r = array();
 $r['group'] = 'Containers';
 $r['title'] = 'Widget';
 $r['objectName'] = 'widget';

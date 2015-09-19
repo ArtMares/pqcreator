@@ -2,22 +2,34 @@
 require_once ("PQSizeCtrl.php");
 require_once ("PQTabWidget.php");
 require_once ("PQCodeGen.php");
+require_once ("PQGoToSlotDialog.php");
+require_once ("PQSourceTextEdit.php");
 
 class PQDesigner extends QMainWindow
 {
     private $iconsPath;
+    
     private $mainLayout;
+    
+    private $formarea;
+    private $formareaLayout;
+    
     private $componentsLayout;
     private $componentsPanel;
     private $componentsDock;
-    private $formarea;
-    private $formareaLayout;
-    private $propertiesLayout;
+    
+    private $propertiesPanelLayout;
     private $propertiesPanel;
     private $propertiesDock;
+    private $propertiesPanelWidgetLayout;
+    private $propertiesPanelWidget;
+    private $propertiesPanelWidgetTree;
+    
     private $actionsPanel;
     private $actionsLayout;
+    
     private $objHash;
+    
     private $forms;
     private $objectList;
     private $formareaName = "___pq_creator__formarea_";
@@ -26,7 +38,13 @@ class PQDesigner extends QMainWindow
     private $startdragy;
     private $sizeCtrl;
     private $gridSize = 8;
+    
     private $componentsPath;
+    private $componentEvents;
+    private $componentFile;
+    
+    private $lastLoadedEvents;
+        
     private $codegen;
     private $projectParentClass;
     private $projectDir;
@@ -39,55 +57,78 @@ class PQDesigner extends QMainWindow
     private $stopAction;
     private $buildAction;
     
-    /* "ÐœÑ‘Ñ€Ñ‚Ð²Ð°Ñ Ð´Ð¸ÑÑ‚Ð°Ð½Ñ†Ð¸Ñ", Ð¿Ñ€Ð¸ ÐºÐ¾Ñ‚Ð¾Ñ€Ð¾Ð¹ ÐºÐ¾Ð¼Ð¿Ð¾Ð½ÐµÐ½Ñ‚Ð° Ð½Ðµ Ð±ÑƒÐ´ÐµÑ‚ Ð¿ÐµÑ€ÐµÐ¼ÐµÑ‰Ð°Ñ‚ÑŒÑÑ. */
+    private $settingsAction;
+    private $scriptsAction;
+    private $designAction;
+    private $sourceAction;
+    
+    private $formareaStack;
+    
+    private $sourceTextEdit;
+    
+    /* "Ì¸ðòâàÿ äèñòàíöèÿ", ïðè êîòîðîé êîìïîíåíòà íå áóäåò ïåðåìåùàòüñÿ. */
     private $deadDragDistance = 8;
     
-    /* Ð­Ñ„Ñ„ÐµÐºÑ‚ Ð¾Ñ‚Ð»Ð¸Ð¿Ð°Ð½Ð¸Ñ Ð¿ÐµÑ€ÐµÑ‚Ð°ÑÐºÐ¸Ð²Ð°ÐµÐ¼Ð¾Ð³Ð¾ ÐºÐ¾Ð¼Ð¿Ð¾Ð½ÐµÐ½Ñ‚Ð°.
-     * Ð•ÑÐ»Ð¸ true - ÐºÐ¾Ð¼Ð¿Ð¾Ð½ÐµÐ½Ñ‚ "Ð¾Ñ‚Ð»Ð¸Ð¿Ð°ÐµÑ‚" Ð¾Ñ‚ Ñ„Ð¾Ñ€Ð¼Ñ‹,
-     * ÐµÑÐ»Ð¸ false - ÐºÐ¾Ð¼Ð¿Ð¾Ð½ÐµÐ½Ñ‚ Ð½Ð°Ñ‡Ð¸Ð½Ð°ÐµÑ‚ Ð¿ÐµÑ€ÐµÑ‰ÐµÐ½Ð¸Ðµ Ð¿Ð»Ð°Ð²Ð½Ð¾. */
+    /* Ýôôåêò îòëèïàíèÿ ïåðåòàñêèâàåìîãî êîìïîíåíòà.
+     * Åñëè true - êîìïîíåíò "îòëèïàåò" îò ôîðìû,
+     * åñëè false - êîìïîíåíò íà÷èíàåò ïåðåùåíèå ïëàâíî. */
     private $detachEffect = true;
     
-    public function __construct($projectParentClass = '', $projectDir = '', $projectName = '')
+    public function __construct($projectParentClass = 'QWidget', $projectDir = '', $projectName = '')
     {
         parent::__construct();
         
+        $fontDatabase = new QFontDatabase;
+        $fontDatabase->addApplicationFont(__DIR__ . "/fonts/RobotoMono-Bold.ttf");
+        $fontDatabase->addApplicationFont(__DIR__ . "/fonts/RobotoMono-BoldItalic.ttf");
+        $fontDatabase->addApplicationFont(__DIR__ . "/fonts/RobotoMono-Italic.ttf");
+        $fontDatabase->addApplicationFont(__DIR__ . "/fonts/RobotoMono-Light.ttf");
+        $fontDatabase->addApplicationFont(__DIR__ . "/fonts/RobotoMono-LightItalic.ttf");
+        $fontDatabase->addApplicationFont(__DIR__ . "/fonts/RobotoMono-Medium.ttf");
+        $fontDatabase->addApplicationFont(__DIR__ . "/fonts/RobotoMono-MediumItalic.ttf");
+        $fontDatabase->addApplicationFont(__DIR__ . "/fonts/RobotoMono-Regular.ttf");
+        $fontDatabase->addApplicationFont(__DIR__ . "/fonts/RobotoMono-Thin.ttf");
+        $fontDatabase->addApplicationFont(__DIR__ . "/fonts/RobotoMono-ThinItalic.ttf");
         
+        /* Ðåäàêòîð èñõîäíûõ êîäîâ */
+        $this->sourceTextEdit = new PQSourceTextEdit;
+        $this->sourceTextEdit->textEdit->enableRules();
+        
+        /* ... */
         $this->objHash = array();
         $this->iconsPath = c(PQNAME)->iconsPath;
         $this->componentsPath = c(PQNAME)->csPath;
+        $this->componentEvents = c(PQNAME)->csEvents;
+        $this->componentFile = c(PQNAME)->csName;
         $this->projectParentClass = $projectParentClass;
         $this->projectDir = $projectDir;
         $this->projectName = $projectName;
         
-        $this->codegen = new PQCodeGen($projectParentClass, $this->objHash, '___pq_formwidget__centralwidget_form1');
+        $this->codegen = new PQCodeGen($projectParentClass, $this->objHash, '___pq_formwidget__centralwidget_form');
         $this->codegen->windowFlags = Qt::Tool;
         $this->codegen->show();
         
         $this->createToolBars();
         $this->createMenuBar();
         $this->createComponentsPanel();
-        $this->createFormarea();
+        $formAreaWidget = $this->createFormarea();
         $this->createPropertiesDock();
-        
-        $this->loadComponents();
         
         $this->mainLayout = new QVBoxLayout;
         $this->mainLayout->setMargin(0);
         $this->mainLayout->addWidget($this->actionsPanel);
-        $this->mainLayout->addWidget($this->formarea);
+        $this->mainLayout->addWidget($this->formareaStack);
         
         $this->centralWidget = new QWidget;
         $this->centralWidget->setLayout($this->mainLayout);
         
-        $this->processCheckTimer = new QTimer(300);
+        $this->processCheckTimer = new QTimer;
+        $this->processCheckTimer->interval = 280;
         $this->processCheckTimer->onTimer = function($timer, $event) {
             if($this->runningProcess != null) {
                 $status = proc_get_status($this->runningProcess);
                 if(!$status['running']) {
-                    $this->runningProcess = null;
-                    $this->processCheckTimer->stop();
-                    $this->stopAction->enabled = false;
-                    $this->runAction->enabled = true;
+                    $this->pqStopAction(null, null, $status);
                 }
             }
         };
@@ -98,32 +139,52 @@ class PQDesigner extends QMainWindow
         
         $this->show();
         
+        $this->createForm($formAreaWidget, $projectParentClass, "Form 1");
+    }
+    
+    public function createForm($formAreaWidget, $class, $windowTitle) {
         $nullSender = new QWidget();
-        $nullSender->objectName = 'nullSender_QWidget_form1';
-        $point = c('___pq_formwidget__centralwidget_form1')->mapToGlobal($this->gridSize, $this->gridSize);
-        $this->createObject($nullSender, 0, 0, $point['x'], $point['y'], 0);
-        $this->testCreate($nullSender, 0, 0, $point['x']+$this->gridSize, $point['y']+$this->gridSize, 0);
-        $this->lastEditedObject->draggable = false;
-        $this->lastEditedObject->movable = false;
-        $this->lastEditedObject->isMainWidget = true;
-        $this->lastEditedObject->disabledSels = 'lt,lm,lb,rt,tm';
-        $this->lastEditedObject->resize(400, 300);
-        $this->selectObject($this->lastEditedObject);
+        $nullSender->objectName = "nullSender_${class}_form";
+        $point = $formAreaWidget->mapToGlobal($this->gridSize, $this->gridSize);
+        
+        $ex_props = array(
+            '__pq_r_ex_enabled_' => true
+        );
+        
+        $form = $this->createObject($nullSender, 0, 0, $point['x'], $point['y'], 0, $ex_props);
+        $this->testCreate_ex($nullSender, 0, 0, $point['x']+$this->gridSize, $point['y']+$this->gridSize, 0, $formAreaWidget);
+        
+        if($form != null) {
+            $this->lastEditedObject->tabIndex = $formAreaWidget->tabIndex;
+            $this->lastEditedObject->draggable = false;
+            $this->lastEditedObject->movable = false;
+            $this->lastEditedObject->isMainWidget = true;
+            $this->lastEditedObject->disabledSels = 'lt,lm,lb,rt,tm';
+            $this->lastEditedObject->resize(400, 300);
+            $this->lastEditedObject->windowTitle = $windowTitle;
+            $this->selectObject($this->lastEditedObject);
+        }
+        
+        $nullSender->free();
     }
     
     public function createFormarea() 
     {
-        $this->formarea = new PQTabWidget($this);
-        $this->formarea->objectName = '___pq_creator__pqtabwidget_';
-        
         $widget = new QWidget;
-        $widget->objectName = '___pq_formwidget__centralwidget_form1';
-        $widget->resize(100,100);
+        $widget->objectName = '___pq_formwidget__centralwidget_form';
         
-        $this->formarea->addTab($widget, $this->codegen, 'Form 1');
         $null = null;
-        $this->formarea->addTab(new QWidget, $null, '', 'C:/pqcreator-git/pqcreator/core/design/faenza-icons/new.png');
+        $this->formarea = new PQTabWidget($this);
         $this->formarea->objectName = $this->formareaName;
+        // $this->formarea->addTab($widget, $this->codegen, 'Form 1');
+        $this->formarea->addTab($widget, $null, 'Form 1');
+        
+        $this->formareaStack = new QStackedWidget($this);
+        $this->formareaStack->addWidget($this->formarea);
+        $this->formareaStack->addWidget($this->codegen);
+        
+        $this->formarea->addTab(new QWidget, $null, '', 'C:/pqcreator-git/pqcreator/core/design/faenza-icons/new.png');
+        return $widget;
     }
     
     public function createMenuBar()
@@ -155,41 +216,95 @@ class PQDesigner extends QMainWindow
         $this->runAction = $topToolBar->addAction($this->iconsPath . '/run.png', tr('Run'));
         $this->runAction->connect(SIGNAL('triggered(bool)') , $this, SLOT('pqRunAction(bool)'));
         
+        $topToolBar->addSeparator();
+        
+        $this->settingsAction = $topToolBar->addAction($this->iconsPath . '/settings.png', tr('Settings'));
+        
+        $topToolBar->addSeparator();
+        
+        $this->scriptsAction = $topToolBar->addAction($this->iconsPath . '/empty-scripts.png', tr('Scripts'));
+        
+        $topToolBar->addSeparator();
+        
+        $this->designAction = $topToolBar->addAction($this->iconsPath . '/design.png', tr('Design'));
+        $this->designAction->connect(SIGNAL('triggered(bool)') , $this, SLOT('pqDesignAction(bool)'));
+        $this->designAction->checkable = true;
+        $this->designAction->checked = true;
+        
+        $this->sourceAction = $topToolBar->addAction($this->iconsPath . '/source.png', tr('Source'));
+        $this->sourceAction->connect(SIGNAL('triggered(bool)') , $this, SLOT('pqSourceAction(bool)'));
+        $this->sourceAction->checkable = true;
+        
         $this->addToolBar(Qt::TopToolBarArea, $topToolBar);
     }
+    
+    public function pqDesignAction($sender, $checked)
+    {
+        if($checked) {
+            $this->sourceAction->checked = false;
+            $this->formareaStack->currentIndex = 0;
+            $this->codegen->disableRules();
+        }
+        else {
+            $sender->checked = true;
+        }
+    }
+    
+    public function pqSourceAction($sender, $checked)
+    {
+        if($checked) {
+            $this->designAction->checked = false;
+            $this->formareaStack->currentIndex = 1;
+            $this->codegen->enableRules();
+            $this->codegen->rehighlight();
+        }
+        else {
+            $sender->checked = true;
+        }
+    }
 
-    public function pqRunAction()
+    public function pqRunAction($sender, $checked)
     {
         $filename = $this->projectDir . '/main.php';
         $exec = $this->projectDir . '/pqengine.exe';
-        if(file_put_contents($filename, $this->codegen->getCode()) === FALSE) {
+        if(file_put_contents($filename, $this->codegen->getCode()) === false) {
             $messagebox = new QMessageBox;
             $messagebox->warning(0, tr('PQCreator error'),
                                     sprintf( tr("Cannot write data to file: %1\r\n".
                                                 'Please check that the file is not opened in another application'), 
                                             $filename )
                                 );
+                                
             $messagebox->free();
         }
         else {
             $pipes = array();
             $this->runningProcess = proc_open($exec, array(), $pipes, $this->projectDir);
+            
             $this->runAction->enabled = false;
             $this->stopAction->enabled = true;
+            
             $this->processCheckTimer->start();
         }
     }
 
-    public function pqStopAction()
+    public function pqStopAction($sender, $checked, $status = null)
     {
-        if($this->runningProcess != null) {
-            $this->processCheckTimer->stop();
-            $status = proc_get_status($this->runningProcess);
-            exec('taskkill /F /T /PID ' . $status['pid']);
+        $this->processCheckTimer->stop();
         
-            $this->stopAction->enabled = false;
-            $this->runAction->enabled = true;
+        if($this->runningProcess != null) {
+            if($status == null) {
+                $status = proc_get_status($this->runningProcess);
+            }
+            
+            if($status['running']) {
+                exec('taskkill /F /T /PID ' . $status['pid']);
+                $this->runningProcess = null;
+            }
         }
+        
+        $this->runAction->enabled = true;
+        $this->stopAction->enabled = false;
     }
 
     public function createComponentsPanel()
@@ -202,15 +317,15 @@ class PQDesigner extends QMainWindow
         $this->componentsPanel->minimumWidth = 180;
         $this->componentsPanel->setLayout($this->componentsLayout);
         
-        $this->objectList = new QComboBox($this->componentsPanel);
-        $this->objectList->setIconSize(24, 24);
-        $this->objectList->minimumHeight = 28;
-        $this->objectList->connect(SIGNAL('currentIndexChanged(int)'), $this, SLOT('selectObjectByListIndex(int)'));
-        $this->componentsLayout->addWidget($this->objectList);
+        $this->loadComponents();
+        $this->componentsPanel->adjustSize();
+        
+        $scrollArea = new QScrollArea;
+        $scrollArea->setWidget($this->componentsPanel);
         
         $this->componentsDock = new QDockWidget($this);
         $this->componentsDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-        $this->componentsDock->setWidget($this->componentsPanel);
+        $this->componentsDock->setWidget($scrollArea);
         $this->componentsDock->width = 180;
         $this->componentsDock->minimumWidth = 180;
         
@@ -233,7 +348,7 @@ class PQDesigner extends QMainWindow
             }
         }
         
-        $this->componentsLayout->addSpacer(0, 5000, QSizePolicy::Preferred, QSizePolicy::Expanding);
+       // $this->componentsLayout->addSpacer(0, 5000, QSizePolicy::Preferred, QSizePolicy::Expanding);
     }
     
     public function createButton($component)
@@ -243,9 +358,9 @@ class PQDesigner extends QMainWindow
         $r = array();
         if (file_exists($componentPath) && is_file($componentPath)) {
             include $componentPath;
-
         }
         else return;
+        
         if (!isset($r['group']) || $r['group'] == 'NoVisual') {
             return;
         }
@@ -268,6 +383,7 @@ class PQDesigner extends QMainWindow
         $button->icon = "$componentsPath/$component/icon.png";
         $button->flat = true;
         $button->creator = true;
+        $button->setIconSize(24,24);
         
         $button->parentClass = $parentClass;
         if (isset($r['defobjw']) && isset($r['defobjh'])) {
@@ -295,26 +411,47 @@ class PQDesigner extends QMainWindow
         $this->propertiesDock = new QDockWidget($this);
         $this->propertiesDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
         
+        $this->propertiesPanelLayout = new QVBoxLayout;
+        $this->propertiesPanelLayout->setMargin(0);
+        
+        $this->propertiesPanel = new QWidget;
+        $this->propertiesPanel->minimumWidth = 180;
+        $this->propertiesPanel->width = 180;
+        $this->propertiesPanel->setLayout($this->propertiesPanelLayout);
+        
+        $this->objectList = new QComboBox($this->componentsPanel);
+        $this->objectList->setIconSize(24, 24);
+        $this->objectList->minimumHeight = 28;
+        $this->objectList->connect(SIGNAL('currentIndexChanged(int)'), $this, SLOT('selectObjectByListIndex(int)'));
+        $this->propertiesPanelLayout->addWidget($this->objectList);
+        
         $this->createPropertiesPanel();
         
+        $this->propertiesDock->setWidget($this->propertiesPanel);
         $this->addDockWidget(Qt::RightDockWidgetArea, $this->propertiesDock);
     }
     
     public function createPropertiesPanel()
     {
         if ($this->propertiesDock != null) {
-            $widget = $this->propertiesDock->widget();
-            if ($widget != null) {
-                $widget->free();
+            if ($this->propertiesPanelWidget != null) {
+                $this->propertiesPanelWidget->free();
+                $this->propertiesPanelWidget = null;
+                $this->propertiesPanelWidgetLayout->free();
+                $this->propertiesPanelWidgetLayout = null;
             }
         }
+        else return;
         
-        $this->propertiesLayout = new QVBoxLayout;
-        $this->propertiesPanel = new QWidget;
-        $this->propertiesPanel->minimumWidth = 180;
-        $this->propertiesPanel->width = 180;
-        $this->propertiesPanel->setLayout($this->propertiesLayout);
-        $this->propertiesDock->setWidget($this->propertiesPanel);
+        $this->propertiesPanelWidgetLayout = new QVBoxLayout;
+        $this->propertiesPanelWidgetLayout->setMargin(0);
+        
+        $this->propertiesPanelWidget = new QWidget($this->propertiesPanel);
+        $this->propertiesPanelWidget->minimumWidth = 180;
+        $this->propertiesPanelWidget->width = 180;
+        $this->propertiesPanelWidget->setLayout($this->propertiesPanelWidgetLayout);
+        
+        $this->propertiesPanelLayout->addWidget($this->propertiesPanelWidget);
     }
 
     public function aaacl($sender, $b)
@@ -322,7 +459,7 @@ class PQDesigner extends QMainWindow
         echo 'OPEN!';
     }
 
-    public function createObject($sender, $x, $y, $globalX, $globalY, $button)
+    public function createObject($sender, $x, $y, $globalX, $globalY, $button, $ex_props = array())
     {
         $this->unselectObject();
         
@@ -346,9 +483,13 @@ class PQDesigner extends QMainWindow
         $obj->parentClass = $sender->parentClass;
         $obj->move($globalX, $globalY);
         $obj->windowOpacity = 0.6;
-        $obj->lockParentClassEvents = true;
+       // $obj->lockParentClassEvents = true;
         $obj->defaultPropertiesLoaded = false;
         $obj->draggable = true;
+        
+        foreach($ex_props as $key => $value) {
+            $obj->$key = $value;
+        }
         
         if ($sender->defobjw !== null 
                 && $sender->defobjh !== null) {
@@ -362,14 +503,20 @@ class PQDesigner extends QMainWindow
         $obj->addPHPEventListenerType(QEvent::MouseButtonRelease);
         $obj->addPHPEventListenerType(QEvent::MouseMove);
         
-        if($type == 'QWidget') {
+        if($type == 'QWidget'
+            || $type == 'QMainWindow') {
+            
             $obj->addPHPEventListenerType(QEvent::Paint);
             $obj->addPHPEventListenerType(QEvent::Resize);
         }
         
         $obj->show();
         
-        $objDataArr = array( 'object' => $obj, 'properties' => array(), 'methods' => array() );
+        $objDataArr = array( 'object' => $obj, 
+                             'events' => array(), 
+                             'properties' => array(), 
+                             'methods' => array() );
+                             
         $objDataArr['properties'][] = 'objectName';
         $objDataArr['properties'][] = 'x';
         $objDataArr['properties'][] = 'y';
@@ -381,30 +528,40 @@ class PQDesigner extends QMainWindow
         $this->objHash[$objectName] = $objData;
         $this->lastEditedObject = $obj;
         
-        /* Ð¡Ð¼ÐµÑ‰ÐµÐ½Ð¸Ðµ ÑÐ¾Ð·Ð´Ð°Ð²Ð°ÐµÐ¼Ð¾Ð³Ð¾ ÐºÐ¾Ð¼Ð¿Ð¾Ð½ÐµÐ½Ñ‚Ð° Ð²Ð»ÐµÐ²Ð¾-Ð½Ð°Ð²ÐµÑ€Ñ…,
-           Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ð¾Ð½ Ð½Ðµ Ð¿ÐµÑ€ÐµÐºÑ€Ñ‹Ð²Ð°Ð»ÑÑ ÐºÑƒÑ€ÑÐ¾Ñ€Ð¾Ð¼ */
+        /* Ñìåùåíèå ñîçäàâàåìîãî êîìïîíåíòà âëåâî-íàâåðõ,
+           ÷òîáû îí íå ïåðåêðûâàëñÿ êóðñîðîì */
         $this->startdragx = 5; 
         $this->startdragy = 5;
+        
+        return $obj;
     }
 
     public function testCreate($sender, $x, $y, $globalX, $globalY, $button)
     {
+        return $this->testCreate_ex($sender, $x, $y, $globalX, $globalY, $button, null);
+    }
+    
+    public function testCreate_ex($sender, $x, $y, $globalX, $globalY, $button, $widget) {
         $sender->releaseMouse();
         $obj = $this->lastEditedObject;
-        $widget = $this->isFormarea($obj, $globalX, $globalY);
-        if ($obj === $widget) {
-            $this->selectObject($obj);
-            return true;
+        
+        if($widget == null) {
+            $widget = $this->isFormarea($obj, $globalX, $globalY);
+            
+            if ($obj === $widget) {
+                $this->selectObject($obj);
+                return true;
+            }
         }
 
-        if ($widget != NULL) {
+        if ($widget != null) {
             $ppoint = $widget->mapFromGlobal($globalX - $this->startdragx, $globalY - $this->startdragy);
             $newObjX = floor($ppoint['x'] / $this->gridSize) * $this->gridSize;
             $newObjY = floor($ppoint['y'] / $this->gridSize) * $this->gridSize;
             $obj->draggable = false;
             $obj->setParent($widget);
             
-            if ($widget->layout() != NULL) {
+            if ($widget->layout() != null) {
                 $widget->layout()->addWidget($obj);
             }
 
@@ -422,15 +579,9 @@ class PQDesigner extends QMainWindow
                 
                 $this->objectList->addItem($objectName, $icon);
                 $this->objectList->currentIndex = $this->objectList->count() - 1;
-                
-                /* TODO: O_Ð¾
-                if ($component == 'QWidget') {
-                    $obj->connect(SIGNAL('widgetEvent(int)') , $this, SLOT('dynObjectListener(int)'));
-                }
-                */
             }
 
-            $this->codegen->updateCode();
+            $this->codegen->updateCode(); 
             $this->selectObject($obj);
             return true;
         }
@@ -441,20 +592,11 @@ class PQDesigner extends QMainWindow
         }
     }
 
-    public function dynObjectListener($sender, $event)
-    {
-        if ($event == QEvent::Paint) {
-            $painter = new QPainter($sender);
-            $painter->setPen("#888", 1, $this->penStyle);
-            $painter->drawPointBackground(8, 8, $sender->width, $sender->height);
-            $painter->free();
-        }
-    }
-
     public function unselectObject($sender = 0, $x = 0, $y = 0, $globalX = 0, $globalY = 0, $btn = 0)
     {
-        if ($this->sizeCtrl != null && is_object($this->sizeCtrl)) {
-            $this->sizeCtrl->__destruct();
+        if ($this->sizeCtrl != null 
+            && is_object($this->sizeCtrl)) {
+            $this->sizeCtrl->free();
         }
 
         $this->sizeCtrl = null;
@@ -483,13 +625,17 @@ class PQDesigner extends QMainWindow
     {
         switch ($event->type) {
         case QEvent::ContextMenu:
-            // Ð—Ð°Ð¿Ñ€ÐµÑ‚Ð¸Ñ‚ÑŒ Ð¾Ñ‚ÐºÑ€Ñ‹Ð²Ð°Ñ‚ÑŒ Ð¼ÐµÐ½ÑŽ, ÐµÑÐ»Ð¸ ÑƒÐºÐ°Ð·Ð°Ñ‚ÐµÐ»ÑŒ Ð±Ñ‹Ð» ÑÐ¼ÐµÑ‰ÐµÐ½ Ñ Ð¾Ð±ÑŠÐµÐºÑ‚Ð°
+            // Çàïðåòèòü îòêðûâàòü ìåíþ, åñëè óêàçàòåëü áûë ñìåùåí ñ îáúåêòà
             if ($sender != widgetAt(mousePos() ['x'], mousePos() ['y'])) {
                 return true;
             }
 
             $this->selectObject($sender);
-            $menu = new QMenu();
+            $menu = new QMenu;
+            
+            $this->createGotoSlotAction($menu, $sender->objectName);
+            
+            $menu->addSeparator();
             
             $raiseAction = $menu->addAction(c(PQNAME)->qticonsPath . '/editraise.png', tr('To front'));
             $raiseAction->connect(SIGNAL('triggered(bool)'), $this, SLOT('raiseObject(bool)'));
@@ -502,7 +648,8 @@ class PQDesigner extends QMainWindow
             $component = get_class($sender);
             if($component == 'QWidget'
                 || $component == 'QGroupBox'
-                || $component == 'QFrame') {
+                || $component == 'QFrame'
+                || $component == 'QMainWindow') {
                 
                 $menu_layout = $menu->addMenu(tr('Layout'));
                 
@@ -533,14 +680,14 @@ class PQDesigner extends QMainWindow
         case QEvent::MouseButtonPress:
             if($event->button === Qt::LeftButton) {
                 $this->startDrag($sender, $event->x, $event->y, $event->globalX, $event->globalY, $event->button);
+                return true;
             }
-            return true;
         
         case QEvent::MouseButtonRelease:
             if($event->button === Qt::LeftButton) {
                 $this->stopDrag($sender, $event->x, $event->y, $event->globalX, $event->globalY, $event->button);
+                return true;
             }
-            return true;
             
         case QEvent::MouseMove:
             $this->moveObject($sender, $event->x, $event->y, $event->globalX, $event->globalY);
@@ -552,13 +699,11 @@ class PQDesigner extends QMainWindow
             $painter->drawPointBackground(8, 8, $sender->width, $sender->height);
             $painter->free();
             $sender->autoFillBackground = true;
-          //  c('___pq_formwidget__centralwidget_')->resize((int)($sender->x + $sender->width + $this->gridSize), $sender->y + $sender->height + $this->gridSize);
-           // return true;
             break;
             
         case QEvent::Resize:
             if($sender->isMainWidget === true) {
-                c('___pq_formwidget__centralwidget_form1')->resize((int)($sender->x + $sender->width + $this->gridSize), $sender->y + $sender->height + $this->gridSize);
+                $sender->parent->resize($sender->x + $sender->width + $this->gridSize, $sender->y + $sender->height + $this->gridSize);
             }
             break;
             
@@ -567,6 +712,59 @@ class PQDesigner extends QMainWindow
         }
         
         return false;
+    }
+    
+    private function createGotoSlotAction($menu, $objectName) {
+        $submenu = $menu->addMenu(tr('Goto slot...'));
+        
+        $startIndex = 10;
+        
+        $component = get_class(c($objectName));
+        
+        $events = array();
+        $eventIndex = $startIndex;
+        while ($component != null) {
+            $componentPath = $this->componentsPath. "/$component/" . $this->componentFile;
+            $eventsPath = $this->componentsPath . "/$component/" . $this->componentEvents;
+            
+            $r = array();
+            
+            if (file_exists($eventsPath) && is_file($eventsPath)) {
+                require ($eventsPath);
+
+                if (count($r) > 0) {
+                    foreach($r as $event) {
+                        $events[$eventIndex] = $event;
+                        $events[$eventIndex]['component'] = $component;
+                        
+                        $icon = $this->iconsPath;
+                        $icon .= ( isset($this->objHash[$objectName]->events[$event['event']])
+                                    && !empty($this->objHash[$objectName]->events[$event['event']]['code']) )
+                                ? '/non-empty-slot.png'
+                                : '/empty-slot.png';
+                        
+                        $action = $submenu->addAction($icon, $event['event']);
+                        
+                        $action->connect(SIGNAL('triggered(bool)'), $this, SLOT('gotoSlotAction(bool)'));
+                        $action->__pq_objectName_ = $objectName;
+                        $action->__pq_eventName_ = $event['event'];
+                        $action->__pq_eventArgs_ = $event['args'];
+                        
+                        $eventIndex++;
+                    }
+                }
+                $submenu->addSeparator();
+            }
+
+            $component = null;
+            require($componentPath);
+
+            if (isset($r['parent']) && !empty(trim($r['parent']))) {
+                $component = $r['parent'];
+            }
+        }
+        
+        $this->lastLoadedEvents = $events;
     }
     
     public function menuLayoutAction($sender, $bool)
@@ -593,7 +791,6 @@ class PQDesigner extends QMainWindow
     public function startDrag($sender, $x, $y, $globalX, $globalY, $button)
     {
         $this->unselectObject();
-        
         
         switch ($button) {
         case Qt::LeftButton:
@@ -645,10 +842,67 @@ class PQDesigner extends QMainWindow
         c($sender->__pq_objectName_)->lower();
     }
     
+    function format_params($params) {
+        $params_ex = explode(',', $params);
+        $fparams = '';
+        
+        $count = count($params_ex) - 1;
+        
+        for($i = 0; $i <= $count; $i++)
+        {
+            $param = trim($params_ex[$i]);
+            $param_ex = explode(' ', $param);
+            
+            $p1 = '<span style="color:#800080">' . $param_ex[0] . '</span>';
+            $p2 = $param_ex[1];
+            
+            if(isset($param_ex[2]) && isset($param_ex[3])) $p2 .= " = ${param_ex[3]}";
+            $fparams .= "$p1 <span style=\"color:#5555FF\">$p2</span>";
+            
+            if($i != $count) $fparams .= ", ";
+        }
+        
+        return $fparams;
+    }
+    
+    public function gotoSlotAction($sender, $bool) {
+        $objectName = $sender->__pq_objectName_;
+        $eventName = $sender->__pq_eventName_;
+        $eventArgs = $sender->__pq_eventArgs_;
+        $args = $this->format_params($eventArgs);
+    
+        $this->sourceTextEdit->textEdit->clear();
+        
+        if(isset($this->objHash[$objectName]->events[$eventName])) {
+            $this->sourceTextEdit->textEdit->plainText = $this->objHash[$objectName]->events[$eventName]['code'];
+        }
+        
+        $this->sourceTextEdit->headerLabel1->text = "<b>$eventName</b>( $args ) {";
+        $this->sourceTextEdit->__pq_objectName_ = $objectName;
+        $this->sourceTextEdit->__pq_eventName_ = $eventName;
+        $this->sourceTextEdit->__pq_eventArgs_ = $eventArgs;
+        
+        $result = $this->sourceTextEdit->exec();
+        
+        if($result === 1) {
+            $this->objHash[$objectName]->events[$eventName]['code'] = $this->sourceTextEdit->textEdit->plainText;
+            
+        }
+        
+        $this->codegen->updateCode();
+    }
+    
+    public function PQGoToSlotDialogFinished($sender, $result) {
+        if(isset($this->lastLoadedEvents[$result])) {
+            echo "PQGoToSlotDialogFinished: " . $this->lastLoadedEvents[$result]['event'];
+        }
+    }
+    
     public function isFormarea($object, $globalX, $globalY)
     {
         $wpoint = $this->mapFromGlobal($globalX, $globalY);
         $widget = $this->widgetAt($wpoint['x'], $wpoint['y']);
+        
         if ($widget === $object) {
             $wpoint = $widget->parent->mapFromGlobal($globalX, $globalY);
             $widget = $widget->parent->widgetAt($wpoint['x'], $wpoint['y']);
@@ -656,14 +910,23 @@ class PQDesigner extends QMainWindow
 
         if ($widget != NULL) {
             $parent = $widget;
+            
             while ($parent != NULL) {
-                if ($parent->objectName != '___pq_formwidget__centralwidget_form1') {
+                //if ($parent->objectName != '___pq_formwidget__centralwidget_form1') {
+                if ($parent->isFormAreaWidget !== true) {
                     $parent = $parent->parent;
                     continue;
                 }
 
                 $parentClass = get_class($widget);
-                while ($parentClass != 'QWidget' && $parentClass != 'QFrame' && $parentClass != 'QGroupBox' && $parentClass != 'PQTabWidget' && $widget != NULL) {
+                while ($parentClass != 'QWidget' 
+                    && $parentClass != 'QFrame' 
+                    && $parentClass != 'QGroupBox'
+                    && $parentClass != 'PQTabWidget' 
+                    && $parentClass != 'QMainWindow'
+                    && $parentClass != 'QStackedWidget'
+                    && $widget != NULL) {
+                    
                     $widget = $widget->parent;
                     $parentClass = get_class($widget);
                 }
@@ -715,7 +978,10 @@ class PQDesigner extends QMainWindow
                     $sender->show();
                     
                     $component = get_class($sender);
-                    if ($component != 'QTextEdit' && $component != 'QTabWidget' && $component != 'QTableWidget') {
+                    if ($component != 'QTextEdit' 
+                        && $component != 'QTabWidget' 
+                        && $component != 'QTableWidget') {
+                        
                         $sender->grabMouse();
                     }
                     
@@ -761,7 +1027,7 @@ class PQDesigner extends QMainWindow
     }
 
     
-    private function createRootItemWidget($property, $tree, $itemIndex) {
+    private function createRootItemWidget($property, $object, $tree, $itemIndex) {
         $widget = null;
         
         switch ($property['type']) {
@@ -808,7 +1074,7 @@ class PQDesigner extends QMainWindow
             case 'combo-list':
                 foreach($property['list'] as $listItemProperty) {
                     $childItemIndex = $tree->addItem( $itemIndex, $listItemProperty['title'] );
-                    $childItemWidget = $this->createRootItemWidget($listItemProperty, $tree, $itemIndex);
+                    $childItemWidget = $this->createRootItemWidget($listItemProperty, $object, $tree, $itemIndex);
                     
                     if ($childItemWidget != null) {
                         $childItemWidget->__pq_property_ = $property['property'];
@@ -857,23 +1123,31 @@ class PQDesigner extends QMainWindow
         return $widget;
     }
     
-    // TODO: Ð´Ð¾Ð±Ð°Ð²Ð¸Ñ‚ÑŒ ÐºÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ðµ!
+    // TODO: äîáàâèòü êýøèðîâàíèå!
     public function loadObjectProperties($object)
     {
         $component = get_class($object);
         
-        // Ð—Ð°Ð³Ñ€ÑƒÐ¶Ð°ÐµÐ¼ Ð²ÑÐµ ÑÐ²Ð¾Ð¹ÑÑ‚Ð²Ð° Ð² Ð¼Ð°ÑÑÐ¸Ð²
+        // Çàãðóæàåì âñå ñâîéñòâà â ìàññèâ
         
         $properties = array();
         while ($component != null) {
             $componentPath = $this->componentsPath . "/$component/component.php";
             $propertiesPath = $this->componentsPath . "/$component/properties.php";
+            
+            // TODO: óáðàòü îáúÿâëåíèå òóò, äîáàâèòü âî âñåõ component.php
             $r = array();
+            $r_ex = array();
+            
             if (file_exists($propertiesPath) && is_file($propertiesPath)) {
                 require ($propertiesPath);
 
                 if (count($r) > 0) {
                     $properties[$component] = $r;
+                    
+                    if($object->__pq_r_ex_enabled_ === true) {
+                        $properties[$component] = array_merge($properties[$component], $r_ex);
+                    }
                 }
             }
 
@@ -885,8 +1159,9 @@ class PQDesigner extends QMainWindow
             }
         }
 
-        // ÐžÑ‚Ð¾Ð±Ñ€Ð°Ð¶Ð°ÐµÐ¼ Ð²ÑÐµ ÑÐ²Ð¾Ð¹ÑÑ‚Ð²Ð° Ð½Ð° Ð¿Ð°Ð½ÐµÐ»Ð¸
-        $tree = new QTreeWidget($this->propertiesPanel);
+        // Îòîáðàæàåì âñå ñâîéñòâà íà ïàíåëè
+        
+        $tree = new QTreeWidget($this->propertiesPanelWidget);
         $tree->columnCount = 2;
         $tree->setHeaderLabels( array( tr('Property'), tr('Value') ) );
         
@@ -897,7 +1172,8 @@ class PQDesigner extends QMainWindow
             $tree->expandItem($rootItemIndex);
             
             foreach($p as $property) {
-                $itemIndex = $tree->addItem( $rootItemIndex, array($property['title'], '') );
+                //$itemIndex = $tree->addItem( $rootItemIndex, array($property['title'], '') );
+                $itemIndex = $tree->addItem( $rootItemIndex, array($property['property'], '') );
                 $widget = null;
                 
                 switch ($property['property']) {
@@ -920,7 +1196,7 @@ class PQDesigner extends QMainWindow
                     break;
                 }
 
-                $widget = $this->createRootItemWidget($property, $tree, $itemIndex);
+                $widget = $this->createRootItemWidget($property, $object, $tree, $itemIndex);
 
                 if ($widget != null) {
                     $widget->__pq_property_ = $property['property'];
@@ -928,8 +1204,8 @@ class PQDesigner extends QMainWindow
                     $tree->setItemWidget($itemIndex, 1, $widget);
                 }
 
-                /* TODO: ÐÐµ Ð¿Ð¾Ð¼Ð½ÑŽ Ð´Ð»Ñ Ñ‡ÐµÐ³Ð¾ ÑÑ‚Ð¾, Ð½Ð¾ Ð²Ñ€Ð¾Ð´Ðµ Ð¾Ð½Ð¾ Ñ€ÐµÐ°Ð»Ð¸Ð·Ð¾Ð²Ð°Ð½Ð¾ Ð² setObjectProperty() =D
-                 * Ð¡ÐºÐ¾Ñ€ÐµÐµ Ð²ÑÐµÐ³Ð¾ Ð½Ðµ Ð¿Ð¾Ð½Ð°Ð´Ð¾Ð±Ð¸Ñ‚ÑÑ
+                /* TODO: Íå ïîìíþ äëÿ ÷åãî ýòî, íî âðîäå îíî ðåàëèçîâàíî â setObjectProperty() =D
+                 * Ñêîðåå âñåãî íå ïîíàäîáèòñÿ
                 if (!$defaultPropertiesLoaded) {
                     $objectName = $object->objectName;
                     if (!in_array($property['property'], $this->objHash[$objectName]->properties)) {
@@ -943,8 +1219,7 @@ class PQDesigner extends QMainWindow
                 */
             }
 
-            $this->propertiesLayout->addWidget($label);
-            $this->propertiesLayout->addWidget($tree);
+            $this->propertiesPanelWidgetLayout->addWidget($tree);
         }
 
         if (!$defaultPropertiesLoaded) {
@@ -965,6 +1240,9 @@ class PQDesigner extends QMainWindow
             $this->objectList->setItemText($this->objectList->itemIndex($objectName) , $value);
             $this->objHash[$value] = $objData;
             $objectName = $value;
+        }
+        else if($property == "windowTitle") {
+            $this->formarea->setTabText($object->tabIndex, $value);
         }
 
         // Methods

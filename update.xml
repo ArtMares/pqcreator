@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<update>
+    <name>PQPack</name>
+    <version>0.1.1</version>
+    <build>2</build>
+    <date>17.08.2015</date>
+    
+    <request>
+        <build></build>
+        <url></url>
+    </request>
+
+    <newfiles>
+    
+        <file>
+            <source>pqpack-update-0.1.1/main.php</source>
+            <destination>%PQPACKPATH%/main.php</destination>
+        </file>
+        
+        <file>
+            <source>pqpack-update-0.1.1/pqpack.build</source>
+            <destination>%PQPACKPATH%/pqpack.build</destination>
+        </file>
+            
+    </newfiles>
+</update>

@@ -1,6 +1,8 @@
 <?php
 
 $r = array();
+$r_ex = array();
+
 $r[] = array(
               'title'         => tr('Title'),
               'property'      => 'title',

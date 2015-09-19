@@ -1,141 +1,173 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="Windows-1251" ?>
 <pqenginetr lang="ru">
-	<unit id="menubar">
-		<source>File</source>
-		<tr>Р¤Р°Р№Р»</tr>
-	</unit>
+    <unit id="menubar">
+        <source>File</source>
+        <tr>Файл</tr>
+    </unit>
   <unit>
     <source>Edit</source>
-    <tr>РџСЂР°РІРєР°</tr>
+    <tr>Правка</tr>
   </unit>
   <unit>
     <source>Open...</source>
-    <tr>РћС‚РєСЂС‹С‚СЊ...</tr>
+    <tr>Открыть...</tr>
   </unit>
   <unit>
     <source>View...</source>
-    <tr>РћР±Р·РѕСЂ...</tr>
+    <tr>Обзор...</tr>
   </unit>
   <unit>
     <source>Create in:</source>
-    <tr>РЎРѕР·РґР°С‚СЊ РІ:</tr>
+    <tr>Создать в:</tr>
   </unit>
   <unit>
     <source>Project name:</source>
-    <tr>РќР°Р·РІР°РЅРёРµ:</tr>
+    <tr>Название:</tr>
   </unit>
   <unit>
     <source>Qt QWidget application</source>
-    <tr>РџСЂРёР»РѕР¶РµРЅРёРµ Qt QWidget</tr>
+    <tr>Приложение Qt QWidget</tr>
   </unit>
   <unit>
     <source>Qt QMainWindow application</source>
-    <tr>РџСЂРёР»РѕР¶РµРЅРёРµ Qt QMainWindow</tr>
+    <tr>Приложение Qt QMainWindow</tr>
   </unit>
   <unit>
     <source>Console application</source>
-    <tr>РљРѕРЅСЃРѕР»СЊРЅРѕРµ РїСЂРёР»РѕР¶РµРЅРёРµ</tr>
+    <tr>Консольное приложение</tr>
   </unit>
   <unit>
     <source>Hidden application</source>
-    <tr>РќРµРІРёРґРёРјРѕРµ РїСЂРёР»РѕР¶РµРЅРёРµ</tr>
+    <tr>Невидимое приложение</tr>
   </unit>
   <unit>
     <source>Open project</source>
-    <tr>РћС‚РєСЂС‹С‚СЊ РїСЂРѕРµРєС‚</tr>
+    <tr>Открыть проект</tr>
   </unit>
   <unit>
     <source>New project</source>
-    <tr>РќРѕРІС‹Р№ РїСЂРѕРµРєС‚</tr>
+    <tr>Новый проект</tr>
   </unit>
   <unit>
     <source>To front</source>
-    <tr>РџРµСЂРµРјРµСЃС‚РёС‚СЊ РІРїРµСЂС‘Рґ</tr>
+    <tr>Переместить вперёд</tr>
   </unit>
   <unit>
     <source>To back</source>
-    <tr>РџРµСЂРµРјРµСЃС‚РёС‚СЊ РЅР°Р·Р°Рґ</tr>
+    <tr>Переместить назад</tr>
   </unit>
   <unit>
     <source>Layout</source>
-    <tr>РљРѕРјРїРѕРЅРѕРІС‰РёРє</tr>
+    <tr>Компоновщик</tr>
   </unit>
   <unit>
     <source>Vertical layout</source>
-    <tr>Р’РµСЂС‚РёРєР°Р»СЊРЅС‹Р№</tr>
+    <tr>Вертикальный</tr>
   </unit>
   <unit>
     <source>Horizontal layout</source>
-    <tr>Р“РѕСЂРёР·РѕРЅС‚Р°Р»СЊРЅС‹Р№</tr>
+    <tr>Горизонтальный</tr>
   </unit>
   <unit>
     <source>Break layout</source>
-    <tr>РЈРґР°Р»РёС‚СЊ</tr>
+    <tr>Удалить</tr>
   </unit>
   <unit>
     <source>Package not found</source>
-    <tr>РџР°РєРµС‚ РЅРµ РЅР°Р№РґРµРЅ</tr>
+    <tr>Пакет не найден</tr>
   </unit>
   <unit>
     <source>PQPack package not found in `%s` directory.
 Without PQPack package you can't compile applications.
 
 Download and install it?</source>
-    <tr>РџР°РєРµС‚ PQPack РЅРµ РЅР°Р№РґРµРЅ РІ РґРёСЂРµРєС‚РѕСЂРёРё `%s`.
-Р‘РµР· СЌС‚РѕРіРѕ РїР°РєРµС‚Р° Р’С‹ РЅРµ СЃРјРѕР¶РµС‚Рµ РєРѕРјРїРёР»РёСЂРѕРІР°С‚СЊ РїСЂРёР»РѕР¶РµРЅРёСЏ.
+    <tr>Пакет PQPack не найден в директории `%s`.
+Без этого пакета Вы не сможете компилировать приложения.
 
-РЎРєР°С‡Р°С‚СЊ Рё СѓСЃС‚Р°РЅРѕРІРёС‚СЊ РµРіРѕ?</tr>
+Скачать и установить его?</tr>
   </unit>
   <unit>
     <source>Yes</source>
-    <tr>Р”Р°</tr>
+    <tr>Да</tr>
   </unit>
   <unit>
     <source>No (Quit)</source>
-    <tr>РќРµС‚ (РІС‹С…РѕРґ)</tr>
+    <tr>Нет (выход)</tr>
   </unit>
   <unit>
     <source>PQCreator error</source>
-    <tr>РћС€РёР±РєР° PQCreator</tr>
+    <tr>Ошибка PQCreator</tr>
   </unit>
   <unit>
     <source>Cannot access to PQPack directory `%s`</source>
-    <tr>РќРµС‚ РґРѕСЃС‚СѓРїР° Рє РґРёСЂРµРєС‚РѕСЂРёРё PQPack: `%s`</tr>
+    <tr>Нет доступа к директории PQPack: `%s`</tr>
   </unit>
   <unit>
     <source>Downloading PQPack package</source>
-    <tr>Р—Р°РіСЂСѓР·РєР° РїР°РєРµС‚Р° PQPack</tr>
+    <tr>Загрузка пакета PQPack</tr>
   </unit>
   <unit>
     <source>Error download PQPack! :-( Please, try later...</source>
-    <tr>Р’Рѕ РІСЂРµРјСЏ Р·Р°РіСЂСѓР·РєРё РїСЂРѕРёР·РѕС€Р»Р° РѕС€РёР±РєР°! :-( РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РїРѕРІС‚РѕСЂРёС‚Рµ РїРѕРїС‹С‚РєСѓ РїРѕР·РґРЅРµРµ...</tr>
+    <tr>Во время загрузки произошла ошибка! :-( Пожалуйста, повторите попытку позднее...</tr>
   </unit>
   <unit>
     <source>Writing in file...</source>
-    <tr>Р—Р°РїРёСЃСЊ РІ С„Р°Р№Р»...</tr>
+    <tr>Запись в файл...</tr>
   </unit>
   <unit>
     <source>Unzip data in `%s`</source>
-    <tr>Р Р°СЃРїР°РєРѕРІРєР° РІ `%s`</tr>
+    <tr>Распаковка в `%s`</tr>
   </unit>
   <unit>
     <source>Error creating directory `%s`!</source>
-    <tr>РћС€РёР±РєР° СЃРѕР·РґР°РЅРёСЏ РґРёСЂРµРєС‚РѕСЂРёРё `%s`</tr>
+    <tr>Ошибка создания директории `%s`</tr>
   </unit>
   <unit>
     <source>Done!</source>
-    <tr>Р“РѕС‚РѕРІРѕ!</tr>
+    <tr>Готово!</tr>
   </unit>
   <unit>
     <source>Error unzip PQPack package `%s`!</source>
-    <tr>РќРµ СѓРґР°Р»РѕСЃСЊ СЂР°СЃРїР°РєРѕРІР°С‚СЊ С„Р°Р№Р» `%s`</tr>
+    <tr>Не удалось распаковать файл `%s`</tr>
   </unit>
   <unit>
     <source>Quit</source>
-    <tr>Р’С‹С…РѕРґ</tr>
+    <tr>Выход</tr>
   </unit>
   <unit>
     <source>Continue</source>
-    <tr>РџСЂРѕРґРѕР»Р¶РёС‚СЊ</tr>
+    <tr>Продолжить</tr>
+  </unit>
+  <unit>
+    <source>Goto slot...</source>
+    <tr>Перейти к слоту...</tr>
+  </unit>
+  <unit>
+    <source>Project</source>
+    <tr>Проект</tr>
+  </unit>
+  <unit>
+    <source>Source</source>
+    <tr>Исходный код</tr>
+  </unit>
+  <unit>
+    <source>Do you want to close the source code editor without save?</source>
+    <tr>Закрыть без сохранения?</tr>
+  </unit>
+  <unit>
+    <source>Cancel</source>
+    <tr>Отмена</tr>
+  </unit>
+  <unit>
+    <source>Design</source>
+    <tr>Дизайн</tr>
+  </unit>
+  <unit>
+    <source>Settings</source>
+    <tr>Настройки</tr>
+  </unit>
+  <unit>
+    <source>Scripts</source>
+    <tr>Скрипты</tr>
   </unit>
 </pqenginetr>
