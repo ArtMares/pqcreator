@@ -66,12 +66,12 @@ class PQDesigner extends QMainWindow
     
     private $sourceTextEdit;
     
-    /* "Ì¸ðòâàÿ äèñòàíöèÿ", ïðè êîòîðîé êîìïîíåíòà íå áóäåò ïåðåìåùàòüñÿ. */
+    /* "ÐœÑ‘Ñ€Ñ‚Ð²Ð°Ñ Ð´Ð¸ÑÑ‚Ð°Ð½Ñ†Ð¸Ñ", Ð¿Ñ€Ð¸ ÐºÐ¾Ñ‚Ð¾Ñ€Ð¾Ð¹ ÐºÐ¾Ð¼Ð¿Ð¾Ð½ÐµÐ½Ñ‚Ð° Ð½Ðµ Ð±ÑƒÐ´ÐµÑ‚ Ð¿ÐµÑ€ÐµÐ¼ÐµÑ‰Ð°Ñ‚ÑŒÑÑ. */
     private $deadDragDistance = 8;
     
-    /* Ýôôåêò îòëèïàíèÿ ïåðåòàñêèâàåìîãî êîìïîíåíòà.
-     * Åñëè true - êîìïîíåíò "îòëèïàåò" îò ôîðìû,
-     * åñëè false - êîìïîíåíò íà÷èíàåò ïåðåùåíèå ïëàâíî. */
+    /* Ð­Ñ„Ñ„ÐµÐºÑ‚ Ð¾Ñ‚Ð»Ð¸Ð¿Ð°Ð½Ð¸Ñ Ð¿ÐµÑ€ÐµÑ‚Ð°ÑÐºÐ¸Ð²Ð°ÐµÐ¼Ð¾Ð³Ð¾ ÐºÐ¾Ð¼Ð¿Ð¾Ð½ÐµÐ½Ñ‚Ð°.
+     * Ð•ÑÐ»Ð¸ true - ÐºÐ¾Ð¼Ð¿Ð¾Ð½ÐµÐ½Ñ‚ "Ð¾Ñ‚Ð»Ð¸Ð¿Ð°ÐµÑ‚" Ð¾Ñ‚ Ñ„Ð¾Ñ€Ð¼Ñ‹,
+     * ÐµÑÐ»Ð¸ false - ÐºÐ¾Ð¼Ð¿Ð¾Ð½ÐµÐ½Ñ‚ Ð½Ð°Ñ‡Ð¸Ð½Ð°ÐµÑ‚ Ð¿ÐµÑ€ÐµÑ‰ÐµÐ½Ð¸Ðµ Ð¿Ð»Ð°Ð²Ð½Ð¾. */
     private $detachEffect = true;
     
     public function __construct($projectParentClass = 'QWidget', $projectDir = '', $projectName = '')
@@ -90,7 +90,7 @@ class PQDesigner extends QMainWindow
         $fontDatabase->addApplicationFont(__DIR__ . "/fonts/RobotoMono-Thin.ttf");
         $fontDatabase->addApplicationFont(__DIR__ . "/fonts/RobotoMono-ThinItalic.ttf");
         
-        /* Ðåäàêòîð èñõîäíûõ êîäîâ */
+        /* Ð ÐµÐ´Ð°ÐºÑ‚Ð¾Ñ€ Ð¸ÑÑ…Ð¾Ð´Ð½Ñ‹Ñ… ÐºÐ¾Ð´Ð¾Ð² */
         $this->sourceTextEdit = new PQSourceTextEdit;
         $this->sourceTextEdit->textEdit->enableRules();
         
@@ -528,8 +528,8 @@ class PQDesigner extends QMainWindow
         $this->objHash[$objectName] = $objData;
         $this->lastEditedObject = $obj;
         
-        /* Ñìåùåíèå ñîçäàâàåìîãî êîìïîíåíòà âëåâî-íàâåðõ,
-           ÷òîáû îí íå ïåðåêðûâàëñÿ êóðñîðîì */
+        /* Ð¡Ð¼ÐµÑ‰ÐµÐ½Ð¸Ðµ ÑÐ¾Ð·Ð´Ð°Ð²Ð°ÐµÐ¼Ð¾Ð³Ð¾ ÐºÐ¾Ð¼Ð¿Ð¾Ð½ÐµÐ½Ñ‚Ð° Ð²Ð»ÐµÐ²Ð¾-Ð½Ð°Ð²ÐµÑ€Ñ…,
+           Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ð¾Ð½ Ð½Ðµ Ð¿ÐµÑ€ÐµÐºÑ€Ñ‹Ð²Ð°Ð»ÑÑ ÐºÑƒÑ€ÑÐ¾Ñ€Ð¾Ð¼ */
         $this->startdragx = 5; 
         $this->startdragy = 5;
         
@@ -625,7 +625,7 @@ class PQDesigner extends QMainWindow
     {
         switch ($event->type) {
         case QEvent::ContextMenu:
-            // Çàïðåòèòü îòêðûâàòü ìåíþ, åñëè óêàçàòåëü áûë ñìåùåí ñ îáúåêòà
+            // Ð—Ð°Ð¿Ñ€ÐµÑ‚Ð¸Ñ‚ÑŒ Ð¾Ñ‚ÐºÑ€Ñ‹Ð²Ð°Ñ‚ÑŒ Ð¼ÐµÐ½ÑŽ, ÐµÑÐ»Ð¸ ÑƒÐºÐ°Ð·Ð°Ñ‚ÐµÐ»ÑŒ Ð±Ñ‹Ð» ÑÐ¼ÐµÑ‰ÐµÐ½ Ñ Ð¾Ð±ÑŠÐµÐºÑ‚Ð°
             if ($sender != widgetAt(mousePos() ['x'], mousePos() ['y'])) {
                 return true;
             }
@@ -1123,19 +1123,19 @@ class PQDesigner extends QMainWindow
         return $widget;
     }
     
-    // TODO: äîáàâèòü êýøèðîâàíèå!
+    // TODO: Ð´Ð¾Ð±Ð°Ð²Ð¸Ñ‚ÑŒ ÐºÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ðµ!
     public function loadObjectProperties($object)
     {
         $component = get_class($object);
         
-        // Çàãðóæàåì âñå ñâîéñòâà â ìàññèâ
+        // Ð—Ð°Ð³Ñ€ÑƒÐ¶Ð°ÐµÐ¼ Ð²ÑÐµ ÑÐ²Ð¾Ð¹ÑÑ‚Ð²Ð° Ð² Ð¼Ð°ÑÑÐ¸Ð²
         
         $properties = array();
         while ($component != null) {
             $componentPath = $this->componentsPath . "/$component/component.php";
             $propertiesPath = $this->componentsPath . "/$component/properties.php";
             
-            // TODO: óáðàòü îáúÿâëåíèå òóò, äîáàâèòü âî âñåõ component.php
+            // TODO: ÑƒÐ±Ñ€Ð°Ñ‚ÑŒ Ð¾Ð±ÑŠÑÐ²Ð»ÐµÐ½Ð¸Ðµ Ñ‚ÑƒÑ‚, Ð´Ð¾Ð±Ð°Ð²Ð¸Ñ‚ÑŒ Ð²Ð¾ Ð²ÑÐµÑ… component.php
             $r = array();
             $r_ex = array();
             
@@ -1159,7 +1159,7 @@ class PQDesigner extends QMainWindow
             }
         }
 
-        // Îòîáðàæàåì âñå ñâîéñòâà íà ïàíåëè
+        // ÐžÑ‚Ð¾Ð±Ñ€Ð°Ð¶Ð°ÐµÐ¼ Ð²ÑÐµ ÑÐ²Ð¾Ð¹ÑÑ‚Ð²Ð° Ð½Ð° Ð¿Ð°Ð½ÐµÐ»Ð¸
         
         $tree = new QTreeWidget($this->propertiesPanelWidget);
         $tree->columnCount = 2;
@@ -1204,8 +1204,8 @@ class PQDesigner extends QMainWindow
                     $tree->setItemWidget($itemIndex, 1, $widget);
                 }
 
-                /* TODO: Íå ïîìíþ äëÿ ÷åãî ýòî, íî âðîäå îíî ðåàëèçîâàíî â setObjectProperty() =D
-                 * Ñêîðåå âñåãî íå ïîíàäîáèòñÿ
+                /* TODO: ÐÐµ Ð¿Ð¾Ð¼Ð½ÑŽ Ð´Ð»Ñ Ñ‡ÐµÐ³Ð¾ ÑÑ‚Ð¾, Ð½Ð¾ Ð²Ñ€Ð¾Ð´Ðµ Ð¾Ð½Ð¾ Ñ€ÐµÐ°Ð»Ð¸Ð·Ð¾Ð²Ð°Ð½Ð¾ Ð² setObjectProperty() =D
+                 * Ð¡ÐºÐ¾Ñ€ÐµÐµ Ð²ÑÐµÐ³Ð¾ Ð½Ðµ Ð¿Ð¾Ð½Ð°Ð´Ð¾Ð±Ð¸Ñ‚ÑÑ
                 if (!$defaultPropertiesLoaded) {
                     $objectName = $object->objectName;
                     if (!in_array($property['property'], $this->objHash[$objectName]->properties)) {
