@@ -15,9 +15,6 @@ class PQPlainTextEdit extends QPlainTextEdit {
         $this->highlighter = new PQSyntaxHighlighter($this);
         $this->highlighter->rulesEnabled = false;
         
-        $this->setPHPEventListener($this, eventListener);
-        $this->addPHPEventListenerType(QEvent::KeyPress);
-        
         $this->setFontFamily("Roboto Mono");
         $this->setFontPixelSize(12);
         
@@ -44,13 +41,24 @@ class PQPlainTextEdit extends QPlainTextEdit {
     public function eventListener($sender, $event) {
         $rx = new QRegExp('');
         $rx->lastIndex = 0;
-        $text = $this->plainText;
         
-        $cpos = $this->getTextCursor()->position;
+        $cursor = $this->getTextCursor();
+        $cpos = $cursor->position;
+        $apos = $cursor->anchor;
+        $hasSelection = $cursor->hasSelection;
         
-        $lock = ( $this->isIn_initComponents($rx, $text, $cpos)
-                  || $this->isIn_loadEvents($rx, $text, $cpos)
-                  || $this->isIn_run($rx, $text, $cpos)
+        //if($hasSelection) {
+        //    $text = $cursor->selectedText();
+        //}
+        //else {
+            $text = $this->plainText;
+        //}
+        
+        $lock = ($this->isIn_lockedConstructor($rx, $text, $apos, $cpos, $hasSelection)
+                  || $this->isIn_initComponents($rx, $text, $apos, $cpos, $hasSelection)
+                  || $this->isIn_loadEvents($rx, $text, $apos, $cpos, $hasSelection)
+                  || $this->isIn_run($rx, $text, $apos, $cpos, $hasSelection)
+                  || $this->isIn_privateVars($rx, $text, $apos, $cpos, $hasSelection)
                 );
                 
         $rx->free();
@@ -59,10 +67,8 @@ class PQPlainTextEdit extends QPlainTextEdit {
             switch($event->key) {
             case Qt::Key_Tab:
                 if($event->type == QEvent::KeyPress) {
-                    $cursor = $sender->getTextCursor();
-                    
                     // добавляем таб в начало строки
-                    if($cursor->hasSelection) {
+                    if($hasSelection) {
                         $exBlockData = $this->getExBlockNums($cursor);
                         $diff = $exBlockData['eblock'] - $exBlockData['sblock'];
                         
@@ -89,10 +95,8 @@ class PQPlainTextEdit extends QPlainTextEdit {
                 
             case  Qt::Key_Backtab:
                 if($event->type == QEvent::KeyPress) {
-                    $cursor = $sender->getTextCursor();
-                    
                     // удаляем табуляцию в начале строки
-                    if($cursor->hasSelection) {
+                    if($hasSelection) {
                         $exBlockData = $this->getExBlockNums($cursor);
                         $diff = $exBlockData['eblock'] - $exBlockData['sblock'];
                         
@@ -114,9 +118,7 @@ class PQPlainTextEdit extends QPlainTextEdit {
                 
             case Qt::Key_Backspace:
                 if($event->type == QEvent::KeyPress) {
-                    $cursor = $sender->getTextCursor();
-                    
-                    if(!$cursor->hasSelection) {
+                    if(!$hasSelection) {
                     
                         $blockText = $cursor->blockText;
                         if(empty($blockText)) break;
@@ -164,8 +166,6 @@ class PQPlainTextEdit extends QPlainTextEdit {
                 
             case Qt::Key_Return:
             case Qt::Key_Enter:
-                $cursor = $sender->getTextCursor();
-                
                 if($event->type == QEvent::KeyPress) {
                     $blockText = $cursor->blockText;
                     preg_match_all('/^(\s)*/', $blockText, $matches);
@@ -186,7 +186,6 @@ class PQPlainTextEdit extends QPlainTextEdit {
                 && $event->type == QEvent::KeyPress) 
             {
                 if($event->text == '}') {
-                    $cursor = $sender->getTextCursor();
                     $this->dedent($cursor);
                     $sender->insertPlainText('}');
                     $lock = true;
@@ -197,40 +196,92 @@ class PQPlainTextEdit extends QPlainTextEdit {
         return $lock;
     }
     
-    private function isIn_initComponents($rx, $text, $cpos) {
-        $rx->pattern = "private function initComponents\(\) \{";
+    private function isIn_lockedConstructor($rx, $text, $apos, $cpos, $hasSelection) {
+        $rx->pattern = "\/\* \{\{\{ public __construct \*\/\n\s*public function __construct\(\) \{";
         $sindex = $rx->indexIn($text, $rx->lastIndex);
         
-        $rx->pattern = "\}";
-        $eindex = $rx->indexIn($text, $sindex) + 2;
+        $rx->pattern = "\}\n\/\* \}\}\} \*\/";
+        $eindex = $rx->indexIn($text, $sindex) + 12;
         $rx->lastIndex = $eindex;
         
-        if($sindex == -1) return false;
-        else return ($cpos > $sindex && $cpos < $eindex);
+        if($sindex == -1) {
+            $rx->pattern = "\/\* \{\{\{ end of __construct \*\/\n";
+            $sindex = $rx->indexIn($text, $rx->lastIndex);
+            
+            $rx->pattern = "\}\n\/\* \}\}\} \*\/";
+            $eindex = $rx->indexIn($text, $sindex) + 12;
+            $rx->lastIndex = $eindex;
+            
+            if($sindex == -1) {
+                $rx->pattern = "\/\* \{\{\{ end of __construct \*\/\n";
+                $sindex = $rx->indexIn($text, $rx->lastIndex);
+                
+                $rx->pattern = "\}\n\/\* \}\}\} \*\/";
+                $eindex = $rx->indexIn($text, $sindex) + 12;
+                $rx->lastIndex = $eindex;
+            }
+            else if($hasSelection) {
+                return true;
+            }
+            else return ($cpos > $sindex && $cpos < $eindex) && ($apos > $sindex && $apos < $eindex);
+        }
+        else if($hasSelection) {
+            return true;
+        }
+        else return ($cpos > $sindex && $cpos < $eindex) && ($apos > $sindex && $apos < $eindex);
     }
     
-    private function isIn_loadEvents($rx, $text, $cpos) {
-        $rx->pattern = "private function loadEvents\(\) \{";
-        $sindex = $rx->indexIn($text);
+    private function isIn_initComponents($rx, $text, $apos, $cpos, $hasSelection) {
+        $rx->pattern = "\/\* \{\{\{ private initComponents \*\/\n\s*private function initComponents\(\) \{";
+        $sindex = $rx->indexIn($text, $rx->lastIndex);
         
-        $rx->pattern = "\}";
-        $eindex = $rx->indexIn($text, $sindex) + 2;
+        $rx->pattern = "\}\n\/\* \}\}\} \*\/";
+        $eindex = $rx->indexIn($text, $sindex) + 12;
         $rx->lastIndex = $eindex;
         
         if($sindex == -1) return false;
-        else return ($cpos > $sindex && $cpos < $eindex);
+        else if($hasSelection) return true;
+        else return ($cpos > $sindex && $cpos < $eindex) && ($apos > $sindex && $apos < $eindex);
     }
     
-    private function isIn_run($rx, $text, $cpos) {
-        $rx->pattern = "public function run\(\) \{";
-        $sindex = $rx->indexIn($text);
+    private function isIn_loadEvents($rx, $text, $apos, $cpos, $hasSelection) {
+        $rx->pattern = "\/\* \{\{\{ private loadEvents \*\/\n\s*private function loadEvents\(\) \{";
+        $sindex = $rx->indexIn($text, $rx->lastIndex);
         
-        $rx->pattern = "\}";
-        $eindex = $rx->indexIn($text, $sindex) + 2;
+        $rx->pattern = "\}\n\/\* \}\}\} \*\/";
+        $eindex = $rx->indexIn($text, $sindex) + 12;
         $rx->lastIndex = $eindex;
         
         if($sindex == -1) return false;
-        else return ($cpos > $sindex && $cpos < $eindex);
+        else if($hasSelection) return true;
+        else return ($cpos > $sindex && $cpos < $eindex) && ($apos > $sindex && $apos < $eindex);
+    }
+    
+    private function isIn_run($rx, $text, $apos, $cpos, $hasSelection) {
+        $rx->pattern = "\/\* \{\{\{ public run \*\/\n\s*public function run\(\) \{";
+        $sindex = $rx->indexIn($text, $rx->lastIndex);
+        
+        $rx->pattern = "\}\n\/\* \}\}\} \*\/";
+        $eindex = $rx->indexIn($text, $sindex) + 12;
+        $rx->lastIndex = $eindex;
+        
+        if($sindex == -1) return false;
+        else if($hasSelection) return true;
+        else return ($cpos > $sindex && $cpos < $eindex) && ($apos > $sindex && $apos < $eindex);
+    }
+    
+    
+    private function isIn_privateVars($rx, $text, $apos, $cpos, $hasSelection) {
+        $rx->pattern = "\/\* \{\{\{ private variables \*\/\n\s*private";
+        $sindex = $rx->indexIn($text, $rx->lastIndex);
+        
+        $rx->pattern = ";\n\/\* \}\}\} \*\/";
+        $eindex = $rx->indexIn($text, $sindex) + 12;
+        $rx->lastIndex = $eindex;
+        
+        if($sindex == -1) return false;
+        else if($hasSelection) return true;
+        else return ($cpos > $sindex && $cpos < $eindex) && ($apos > $sindex && $apos < $eindex);
     }
     
     public function getExBlockNums($cursor) {

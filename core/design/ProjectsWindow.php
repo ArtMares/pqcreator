@@ -14,8 +14,7 @@ class ProjectsWindow extends QWidget {
     
     $openProject = 
       $this->create_button( tr('Open project'), 'open.png', 
-                           '', 
-                           false );
+                           SLOT('open_project()') );
     
     $qwidgetProject = 
       $this->create_button( tr('Qt QWidget application'), 'widget.png', 
@@ -66,7 +65,7 @@ class ProjectsWindow extends QWidget {
     $newProjectFD_lineEdit->text = $this->get_def_dir();
     $newProjectFD_button = new QPushButton($newProject);
     $newProjectFD_button->text = tr('View...');
-    $newProjectFD_button->connect( SIGNAL('clicked()'), $this, SLOT('open_newProjectFD()') );
+    $newProjectFD_button->connect( SIGNAL('clicked(bool)'), $this, SLOT('open_newProjectFD()') );
      
     // NewProject layout
     $newProject_layout = new QGridLayout;
@@ -213,7 +212,6 @@ class ProjectsWindow extends QWidget {
     if($this->createProjectDir()) {
       $this->hide();
       $designer = new PQDesigner('QWidget', $this->projectDir, $this->newProjectName_lineEdit->text);
-      $designer->show();
     }
   }
   
@@ -221,7 +219,29 @@ class ProjectsWindow extends QWidget {
     if($this->createProjectDir()) {
       $this->hide();
       $designer = new PQDesigner('QMainWindow', $this->projectDir, $this->newProjectName_lineEdit->text);
-      $designer->show();
     }
+  }
+  
+  public function open_project($sender) {
+    $fileDialog = new QFileDialog;
+    
+    $open_project_path = $fileDialog->getOpenFileName(0, "CAPTION", $this->get_def_dir(), "*.pqproj");
+    if(!empty(trim($open_project_path))) {
+        $this->hide();
+        
+        $pqprojData = unserialize(base64_decode(gzuncompress(file_get_contents($open_project_path))));
+        
+        $projectParentClass = '';
+        foreach($pqprojData['objHash'] as $objData) {
+            $projectParentClass = get_class($objData->object);
+            break;
+        }
+        
+        $designer = new PQDesigner($projectParentClass, dirname($open_project_path), $pqprojData['projectName']);
+        $designer->loadProjectFromData($pqprojData);
+        //pre($pqprojData);
+    }
+    
+    $fileDialog->free();
   }
 }

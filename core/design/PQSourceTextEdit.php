@@ -39,6 +39,8 @@ class PQSourceTextEdit extends QDialog {
     public $__pq_eventName_;
     public $__pq_eventArgs_;
     
+    public $haveChanges;
+    
     public function __construct($parent = 0) 
     {
         parent::__construct($parent);
@@ -46,6 +48,9 @@ class PQSourceTextEdit extends QDialog {
         $this->setWindowFlags(Qt::Window);
         
         $this->textEdit = new PQPlainTextEdit($this);
+        $this->textEdit->setPHPEventListener($this, textEditEventListener);
+        $this->textEdit->addPHPEventListenerType(QEvent::KeyPress);
+        
         $this->headerLabel1 = new QLabel($this);
         
         $this->setPHPEventListener($this, eventListener);
@@ -78,6 +83,13 @@ class PQSourceTextEdit extends QDialog {
         $layout->addWidget($buttonsPanel);
         
         $this->setLayout($layout);
+        
+        $this->haveChanges = false;
+    }
+    
+    public function setPlainText($text) {
+        parent::setPlainText($text);
+        $this->haveChanges = false;
     }
     
     public function exec() {
@@ -88,10 +100,14 @@ class PQSourceTextEdit extends QDialog {
     public function eventListener($sender, $event) {
         switch($event->type) {
         case QEvent::Close:
-            $dialog = new PQSourceTextEditCloseDialog(tr('Do you want to close the source code editor without save?'),
-                                                        $this);
+            $result = 1;
             
-            $result = $dialog->exec();
+            if($this->haveChanges) {
+                $dialog = new PQSourceTextEditCloseDialog(tr('Do you want to close the source code editor without save?'),
+                                                            $this);
+                
+                $result = $dialog->exec();
+            }
             
             if($result === 1) {
                 $this->done(0);
@@ -103,6 +119,12 @@ class PQSourceTextEdit extends QDialog {
             }
             
             break;
+        }
+    }
+    
+    public function textEditEventListener($sender, $event) {
+        if($event->type == QEvent::KeyPress) {
+            $this->haveChanges = true;
         }
     }
 }

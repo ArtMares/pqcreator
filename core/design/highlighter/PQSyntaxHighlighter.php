@@ -64,6 +64,12 @@ class PQSyntaxHighlighter extends QSyntaxHighlighter {
         $this->addRule('//', '$', 2, $comment_format);
         $this->addRule('#', '$', 3, $comment_format);
         
+        // скрытые комментарии
+        $hidden_comment_format = new QTextCharFormat;
+        $hidden_comment_format->foreground = '#fff';
+        $this->addRule('/\* \{\{\{', '\*/', 4, $hidden_comment_format);
+        $this->addRule('/\* \}\}\}', '\*/', 4, $hidden_comment_format);
+        
         // запрещённые
         $disabled_format = new QTextCharFormat;
         $disabled_format->foreground = '#590000';
@@ -84,5 +90,7 @@ class PQSyntaxHighlighter extends QSyntaxHighlighter {
         
         // строки (без форматирования)
         $this->addRule('\'', '\'', 10, $strings_format);
+        
+      
     }
 }

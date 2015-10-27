@@ -16,6 +16,7 @@ require_once('core/design/PQDesigner.php');
 require_once('core/design/PQDownloader.php');
 require_once('core/design/ProjectsWindow.php');
 require_once('core/logo/PQCreatorLogo.php');
+require_once('core/pqpack/PQBuilder.php');
 
 class PQCreator extends QObject {
     private $projects;
@@ -29,8 +30,10 @@ class PQCreator extends QObject {
         
         $this->iconsPath = $this->currentPath . '/core/design/faenza-icons';
         $this->qticonsPath = $this->currentPath . '/core/design/qt-icons';
-        $this->pqpackPath = ___pq_prepare_path(getenv("PROGRAMFILES")) . '/PQPack';
-
+        //$this->pqpackPath = ___pq_prepare_path(getenv("PROGRAMFILES")) . '/PQPack';
+        $this->pqpackPath = $this->currentPath . '/core/pqpack';
+        $this->defaultBuildPath = explode(':',$this->currentPath)[0] . '/pqprojects';
+        
         // Components
         $this->csPath = $this->currentPath . '/core/components';
         $this->csName = 'component.php';

@@ -170,4 +170,20 @@ Download and install it?</source>
     <source>Scripts</source>
     <tr>Скрипты</tr>
   </unit>
+  <unit>
+    <source>Welcome into the PQCreator SourceEditor!
+By default, a SourceEditor is locked.
+If you consider yourself an expert, you can unlock it.
+
+Unlock a SourceEditor?</source>
+    <tr>Добро пожаловать в редактор исходного кода проектов PQCreator!
+По умолчанию редактирование исходного кода проекта запрещено.
+Если вы считаете себя опытным пользователем, то можете разблокировать редактор.
+
+Разблокировать редактор исходного кода проекта?</tr>
+  </unit>
+  <unit>
+    <source>Yes, I'm EXPERT!</source>
+    <tr>Да, я ЭКСПЕРТ!</tr>
+  </unit>
 </pqenginetr>

@@ -5,6 +5,7 @@ require_once ("PQPlainTextEdit.php");
 class PQCodeGen extends PQPlainTextEdit {
     private $projectParentClass;
     private $objHash;
+    private $projectData;
     private $sortedObjHash;
     private $nullParentName;
     private $pq_globals;
@@ -12,16 +13,18 @@ class PQCodeGen extends PQPlainTextEdit {
     private $typeHash;
     private $dynTypeHash;
     
-    public function __construct($projectParentClass, &$objHash, $nullParentName)
+    public function __construct($projectParentClass, &$objHash, &$projectData, $nullParentName)
     {
         parent::__construct();
         
         $this->projectParentClass = $projectParentClass;
         $this->objHash = &$objHash;
+        $this->projectData = &$projectData;
         $this->nullParentName = $nullParentName;
         $this->pq_globals = c(PQNAME);
         $this->move(0, 0);
         $this->resize(400, 600);
+        $this->readOnly = true;
        
         // хеш основных типов
 
@@ -42,13 +45,25 @@ class PQCodeGen extends PQPlainTextEdit {
         $this->dynTypeHash = array();
     }
     
-    private function resortHash() {
+    public function setObjHash(&$objHash) {
+        $this->objHash = &$objHash;
+    }
+    
+    public function setProjectData(&$projectData) {
+        $this->projectData = &$projectData;
+    }
+    
+    public function resortHash() {
         $sortedObjHash = array();
         
         foreach($this->objHash as $objectName => $objData) {
             $index = count($sortedObjHash);
-            $sortedObjHash[$index] = array('objectName' => $objectName, 'lvl' => 0, 'objData' => $objData);
             $parentObjectName = c($objectName)->parent->objectName;
+            
+            $sortedObjHash[$index] = array('objectName' => $objectName, 
+                                            'parentObjectName' => $parentObjectName,
+                                            'lvl' => 0, 
+                                            'objData' => $objData);
             
             while($parentObjectName !== $this->nullParentName) {
                 $sortedObjHash[$index]['lvl']++;
@@ -75,6 +90,11 @@ class PQCodeGen extends PQPlainTextEdit {
     public function getCode() {
         return "<?php\n\n" . $this->plainText;
     }
+    
+    public function getSortedObjHash() {
+        $this->resortHash();
+        return $this->sortedObjHash;
+    }
   
     public function updateCode() 
     {
@@ -85,25 +105,39 @@ class PQCodeGen extends PQPlainTextEdit {
         $s2 = "        ";
         $s3 = "            ";
         
+        $sections = array('declaration-class',
+                            'declaration-vars',
+                            '__construct',
+                            'pre-initComponents',
+                            'post-initComponents',
+                            'pre-loadEvents',
+                            'post-loadEvents',
+                            'pre-run',
+                            'post-run'
+                            );
+        
         $e = '%--P-Q--C-O-D-E%%';
         $extends = $this->projectParentClass;
         
-        $mainclass = "class PQApp extends QObject {\n$e\n}";
+        $fn_privateVars = "$e\n%%--P-Q--declaration-vars--%%";
+        $e_privateVars = '';
+        
+        $mainclass = "%%--P-Q--declaration-class--%%\n\nclass PQApp extends QObject {\n$e\n}";
         $e_mainclass = '';
         
         $fn___construct = "${s1}public function __construct() {\n$e\n$s1}";
         $e_fn___construct = "${s2}parent::__construct();"
-                                ."\n\n${s2}\$this->initComponents();"
+                                ."\n\n%%--P-Q--__construct--%%${s2}\$this->initComponents();"
                                 ."\n${s2}\$this->loadEvents();";
         
-        $fn_initComponents = "${s1}private function initComponents() {\n$e$s1}";
+        $fn_initComponents = "${s1}private function initComponents() {\n%%--P-Q--pre-initComponents--%%$e\n%%--P-Q--post-initComponents--%%$s1}";
         $e_fn_initComponents = '';
         
-        $fn_loadEvents = "${s1}private function loadEvents() {\n$e$s1}";
+        $fn_loadEvents = "${s1}private function loadEvents() {\n%%--P-Q--pre-loadEvents--%%$e\n%%--P-Q--post-loadEvents--%%$s1}";
         $e_fn_loadEvents = '';
         
         $mainForm_objectName = $this->sortedObjHash[0]['objectName'];
-        $fn_run = "${s1}public function run() {\n$e\n${s1}}";
+        $fn_run = "${s1}public function run() {\n%%--P-Q--pre-run--%%$e\n%%--P-Q--post-run--%%${s1}}";
         $e_fn_run = "${s2}\$this->${mainForm_objectName}->show();";
     
         $lastIndex = count($this->sortedObjHash) - 1;
@@ -114,7 +148,7 @@ class PQCodeGen extends PQPlainTextEdit {
             $objData = $objHash['objData'];
             
             $component = get_class($objData->object);
-            $e_mainclass .= "${s1}private $${objectName};\n";
+            $e_privateVars .= "${s1}private $${objectName};";
             
             $parentObjectName = $objData->object->parent->objectName;
             if($parentObjectName === $this->nullParentName) {
@@ -175,8 +209,11 @@ class PQCodeGen extends PQPlainTextEdit {
                 }
             }
             
-            if($index < $lastIndex) $e_fn_initComponents .= "\n";
-            else $e_mainclass .= "\n";
+            if($index < $lastIndex) {
+                $e_fn_initComponents .= "\n";
+                $e_privateVars .= "\n"; // 26.09.2015
+            }
+            // else $e_privateVars .= '/* }}} */'; // 26.09.2015
             
             $index++;
         }
@@ -185,19 +222,38 @@ class PQCodeGen extends PQPlainTextEdit {
         $fn_initComponents = str_replace($e, $e_fn_initComponents, $fn_initComponents);
         $fn_loadEvents = str_replace($e, $e_fn_loadEvents, $fn_loadEvents);
         $fn_run = str_replace($e, $e_fn_run, $fn_run);
+        $fn_privateVars = str_replace($e, $e_privateVars, $fn_privateVars);
 
         $e_mainclass .= $fn___construct . "\n\n";
         $e_mainclass .= $fn_initComponents . "\n\n";
         $e_mainclass .= $fn_loadEvents . "\n\n";
-        $e_mainclass .= $fn_run;
+        $e_mainclass .= $fn_run . "\n\n";
+        $e_mainclass .= $fn_privateVars;
         
         $mainclass = str_replace($e, $e_mainclass, $mainclass);
         $mainclass .= "\n\n\$pqapp = new PQApp;\n\$pqapp->run();\nqApp::exec();";
-
+        
+        // Sections
+        foreach($sections as $section) {
+            $es = "%%--P-Q--${section}--%%";
+            
+            $e_section = '';
+            if(isset($this->projectData['scripts'][$section])) {
+                $e_section = '';
+                $e_section_arr = explode("\n", $this->projectData['scripts'][$section]);
+                foreach($e_section_arr as $line) {
+                    $e_section .= "$s2$line\n";
+                }
+                $e_section .= "\n";
+            }
+            
+            $mainclass = str_replace($es, $e_section, $mainclass);
+        }
+        
         $this->plainText = $mainclass;
     }
 
-    private function getPropertyType($component, $property) {
+    public function getPropertyType($component, $property) {
         // Основные параметры достаются из хеша
         if(isset($this->typeHash[$property])) {
             return $this->typeHash[$property];

@@ -4,6 +4,50 @@ require_once ("PQTabWidget.php");
 require_once ("PQCodeGen.php");
 require_once ("PQGoToSlotDialog.php");
 require_once ("PQSourceTextEdit.php");
+require_once ("PQScripts.php");
+
+class PQObjectData {
+    public $object;
+    public $type;
+    public $name;
+    public $events;
+    public $properties;
+    public $methods;
+    
+    public $c_events;
+    public $c_properties;
+    public $c_methods;
+    
+    public function __construct() {
+        $properties = array();
+        $methods = array();
+        $events = array();
+    }
+}
+
+class PQData {
+    public $objHash;
+    
+    public function __construct() {
+        $this->objHash = array();
+    }
+    
+    public function addObject($objectName, $object, $parent) {
+        $data = new PQObjectData;
+        
+        $data->object = $object;
+        $data->type = get_class($object);
+        $data->name = $objectName;
+        
+        $data->properties[] = 'objectName';
+        $data->properties[] = 'x';
+        $data->properties[] = 'y';
+        $data->properties[] = 'width';
+        $data->properties[] = 'height';
+        
+        $this->objHash[$objectName] = $data;
+    }
+}
 
 class PQDesigner extends QMainWindow
 {
@@ -25,10 +69,11 @@ class PQDesigner extends QMainWindow
     private $propertiesPanelWidget;
     private $propertiesPanelWidgetTree;
     
+    private $historyTree;
+    private $historyDock;
+    
     private $actionsPanel;
     private $actionsLayout;
-    
-    private $objHash;
     
     private $forms;
     private $objectList;
@@ -74,9 +119,19 @@ class PQDesigner extends QMainWindow
      * если false - компонент начинает перещение плавно. */
     private $detachEffect = true;
     
+    private $objHash;
+    private $projectData;
+    private $projectSets;
+    
+    private $settings;
+    
+    private $pqbuilder;
+    
     public function __construct($projectParentClass = 'QWidget', $projectDir = '', $projectName = '')
     {
         parent::__construct();
+        
+        $this->settings = new QSettings("settings.ini", QSettings::IniFormat);
         
         $fontDatabase = new QFontDatabase;
         $fontDatabase->addApplicationFont(__DIR__ . "/fonts/RobotoMono-Bold.ttf");
@@ -96,6 +151,12 @@ class PQDesigner extends QMainWindow
         
         /* ... */
         $this->objHash = array();
+        $this->projectSets = array();
+        
+        $this->projectData = array();
+        $this->projectData['history'] = array();
+        
+        
         $this->iconsPath = c(PQNAME)->iconsPath;
         $this->componentsPath = c(PQNAME)->csPath;
         $this->componentEvents = c(PQNAME)->csEvents;
@@ -104,13 +165,14 @@ class PQDesigner extends QMainWindow
         $this->projectDir = $projectDir;
         $this->projectName = $projectName;
         
-        $this->codegen = new PQCodeGen($projectParentClass, $this->objHash, '___pq_formwidget__centralwidget_form');
+        $this->codegen = new PQCodeGen($projectParentClass, $this->objHash, $this->projectData, '___pq_formwidget__centralwidget_form');
         $this->codegen->windowFlags = Qt::Tool;
         $this->codegen->show();
         
         $this->createToolBars();
         $this->createMenuBar();
         $this->createComponentsPanel();
+        $this->createHistoryPanel();
         $formAreaWidget = $this->createFormarea();
         $this->createPropertiesDock();
         
@@ -142,6 +204,116 @@ class PQDesigner extends QMainWindow
         $this->createForm($formAreaWidget, $projectParentClass, "Form 1");
     }
     
+    public function loadProjectFromData($pqprojData) {
+        $objIndex = 0;
+        foreach($pqprojData['objHash'] as $objectName => &$objData) {
+            $obj = &$objData->object;
+            $component = get_class($obj);
+            $objDataEx = $pqprojData['objHashEx'][$objectName];
+            $parentObjectName = $objDataEx['parentObjectName'];
+            $propertiesData = $objDataEx['propertiesData'];
+            
+            if($parentObjectName != '___pq_formwidget__centralwidget_form') {
+                $obj->__construct(c($parentObjectName));
+                
+                $obj->setPHPEventListener($this, dynObjectEventListener);
+                $obj->addPHPEventListenerType(QEvent::ContextMenu);
+                $obj->addPHPEventListenerType(QEvent::KeyPress);
+                $obj->addPHPEventListenerType(QEvent::MouseButtonPress);
+                $obj->addPHPEventListenerType(QEvent::MouseButtonRelease);
+                $obj->addPHPEventListenerType(QEvent::MouseMove);
+                        
+                if($type == 'QWidget'
+                    || $type == 'QMainWindow') {
+                    $obj->addPHPEventListenerType(QEvent::Paint);
+                    $obj->addPHPEventListenerType(QEvent::Resize);
+                }
+                
+                $obj->draggable = false;
+                $obj->windowOpacity = 1;
+                $obj->movable = true;
+                $obj->isDynObject = true;
+                
+                $icon = $this->componentsPath . "/$component/icon.png";
+                
+                $this->objectList->addItem($objectName, $icon);
+                
+                $obj->show();
+            }
+            else if($objIndex > 0){
+                $widget = new QWidget;
+                $widget->objectName = '___pq_formwidget__centralwidget_form';
+                $windowTitle = $propertiesData['windowTitle']['value'];
+                
+                $this->formarea->addTab($widget, $null, $windowTitle);
+                $obj = $this->createForm($widget, "QWidget", $windowTitle);
+            }
+            else  {
+                $obj = $this->lastEditedObject;
+            }
+            
+            foreach($propertiesData as $property => $propertyData) {
+                $obj->$property = $propertyData['value'];
+            }
+            
+            $objIndex++;
+        }
+        
+        $this->objHash = $pqprojData['objHash'];
+        $this->projectData = $pqprojData['projectData'];
+        $this->projectSets = $pqprojData['projectSets'];
+        $this->codegen->setObjHash($this->objHash);
+        $this->codegen->setProjectData($this->projectData);
+        
+        $this->codegen->updateCode();
+        
+        qApp::setActiveWindow($this);
+        $this->setFocus();
+    }
+    
+    public function saveProjectToFile($projectFile) {
+        $this->codegen->resortHash();
+        
+        if($this->pqbuilder != null) {
+            $this->projectSets['appName'] = $this->pqbuilder->appName;
+            $this->projectSets['pqpackPath'] = $this->pqbuilder->pqpackPath;
+            $this->projectSets['buildPath'] = $this->pqbuilder->buildPath;
+            $this->projectSets['appIcoPath'] = $this->pqbuilder->appIcoPath;
+        }
+        
+        $pqprojData['projectName'] = $this->projectName;
+        $pqprojData['objHash'] = $this->objHash;
+        $pqprojData['objHashEx'] = array();
+        $pqprojData['projectData'] = $this->projectData;
+        $pqprojData['projectSets'] = $this->projectSets;
+        
+        foreach($pqprojData['objHash'] as $objectName => $objData) {
+            $obj = $objData->object;
+            
+            $objDataEx = array();
+            $objDataEx['parentObjectName'] = $obj->parent->objectName;
+            $objDataEx['propertiesData'] = array();
+            
+            if(isset($objData->properties)) {
+                foreach($objData->properties as $property) {
+                    $value = $obj->$property;
+                    
+                    $propertyType = $this->codegen->getPropertyType($component, $property);
+                    
+                    $objDataEx['propertiesData'][$property] = array();
+                    $objDataEx['propertiesData'][$property]['type'] = $propertyType;
+                    $objDataEx['propertiesData'][$property]['value'] = $value;
+                }
+            }
+            
+            $pqprojData['objHashEx'][$objectName] = $objDataEx;
+        }
+        
+        $pqproj = gzcompress(base64_encode(serialize($pqprojData)), 9);
+        
+        file_put_contents($projectFile, $pqproj);
+    }
+    
     public function createForm($formAreaWidget, $class, $windowTitle) {
         $nullSender = new QWidget();
         $nullSender->objectName = "nullSender_${class}_form";
@@ -166,6 +338,8 @@ class PQDesigner extends QMainWindow
         }
         
         $nullSender->free();
+        
+        return $form;
     }
     
     public function createFormarea() 
@@ -176,7 +350,6 @@ class PQDesigner extends QMainWindow
         $null = null;
         $this->formarea = new PQTabWidget($this);
         $this->formarea->objectName = $this->formareaName;
-        // $this->formarea->addTab($widget, $this->codegen, 'Form 1');
         $this->formarea->addTab($widget, $null, 'Form 1');
         
         $this->formareaStack = new QStackedWidget($this);
@@ -207,14 +380,14 @@ class PQDesigner extends QMainWindow
         $topToolBar = new QToolBar($this);
         
         $this->buildAction = $topToolBar->addAction($this->iconsPath . '/build.png', tr('Build'));
-        $this->buildAction->enabled = false;
+        $this->buildAction->connect(SIGNAL('triggered(bool)'), $this, SLOT('pqBuildAction(bool)'));
         
         $this->stopAction = $topToolBar->addAction($this->iconsPath . '/stop.png', tr('Stop'));
-        $this->stopAction->connect(SIGNAL('triggered(bool)') , $this, SLOT('pqStopAction(bool)'));
+        $this->stopAction->connect(SIGNAL('triggered(bool)'), $this, SLOT('pqStopAction(bool)'));
         $this->stopAction->enabled = false;
         
         $this->runAction = $topToolBar->addAction($this->iconsPath . '/run.png', tr('Run'));
-        $this->runAction->connect(SIGNAL('triggered(bool)') , $this, SLOT('pqRunAction(bool)'));
+        $this->runAction->connect(SIGNAL('triggered(bool)'), $this, SLOT('pqRunAction(bool)'));
         
         $topToolBar->addSeparator();
         
@@ -223,19 +396,97 @@ class PQDesigner extends QMainWindow
         $topToolBar->addSeparator();
         
         $this->scriptsAction = $topToolBar->addAction($this->iconsPath . '/empty-scripts.png', tr('Scripts'));
+        $this->scriptsAction->connect(SIGNAL('triggered(bool)'), $this, SLOT('pqScriptsAction(bool)'));
         
         $topToolBar->addSeparator();
         
         $this->designAction = $topToolBar->addAction($this->iconsPath . '/design.png', tr('Design'));
-        $this->designAction->connect(SIGNAL('triggered(bool)') , $this, SLOT('pqDesignAction(bool)'));
+        $this->designAction->connect(SIGNAL('triggered(bool)'), $this, SLOT('pqDesignAction(bool)'));
         $this->designAction->checkable = true;
         $this->designAction->checked = true;
         
         $this->sourceAction = $topToolBar->addAction($this->iconsPath . '/source.png', tr('Source'));
-        $this->sourceAction->connect(SIGNAL('triggered(bool)') , $this, SLOT('pqSourceAction(bool)'));
+        $this->sourceAction->connect(SIGNAL('triggered(bool)'), $this, SLOT('pqSourceAction(bool)'));
         $this->sourceAction->checkable = true;
         
         $this->addToolBar(Qt::TopToolBarArea, $topToolBar);
+    }
+    
+    public function pqBuildAction($sender, $checked) {
+        if(!$this->preSaveProject()) return;
+        
+        if($this->pqbuilder == null) {
+            $this->pqbuilder = new PQBuilder('packedapp');
+        }
+        
+        $this->pqbuilder->setMainFilePath($this->projectDir . '/main.php');
+            
+        $appName = isset($this->projectSets['appName']) ? 
+                        $this->projectSets['appName'] : $this->projectName;
+        $this->pqbuilder->setAppName($appName);
+        
+        $buildPath = isset($this->projectSets['buildPath']) ? 
+                        $this->projectSets['buildPath'] : $this->projectDir . '/build';
+        $this->pqbuilder->setBuildPath($buildPath);
+        
+        $appIcoPath = isset($this->projectSets['appIcoPath']) ? 
+                        $this->projectSets['appIcoPath'] : '';
+        $this->pqbuilder->setAppIcoPath($appIcoPath);
+                        
+        $pqpackPath = isset($this->projectSets['pqpackPath']) ? 
+                        $this->projectSets['pqpackPath'] : $this->pqbuilder->pqpackPath;
+        $this->pqbuilder->setPQPackPath($pqpackPath);
+        
+        $this->pqbuilder->show();
+    }
+    
+    public function pqScriptsAction($sender, $checked) {
+        $menu = new QMenu;
+    
+        $sections = array('declaration-class',
+                            'declaration-vars',
+                            '__construct',
+                            'pre-initComponents',
+                            'post-initComponents',
+                            'pre-loadEvents',
+                            'post-loadEvents',
+                            'pre-run',
+                            'post-run'
+                            );
+                            
+        foreach($sections as $section) {
+            $icon = $this->iconsPath;
+            $icon .= ( isset($this->projectData['scripts'][$section])
+                        && !empty($this->projectData['scripts'][$section]) )
+                    ? '/non-empty-slot.png'
+                    : '/empty-slot.png';
+                    
+            $action = $menu->addAction($icon, $section);
+            $action->__pq_src_section_ = $section;
+            $action->connect(SIGNAL('triggered(bool)'), $this, SLOT('gotoSrcSection(bool)'));
+        }
+        
+        $menu->exec(mousePos() ['x'], mousePos() ['y']);
+        $menu->free();
+    }
+    
+    public function gotoSrcSection($sender, $checked) {
+        $section = $sender->__pq_src_section_;
+    
+        $this->sourceTextEdit->textEdit->clear();
+        
+        if(isset($this->projectData['scripts'][$section])) {
+            $this->sourceTextEdit->textEdit->setPlainText($this->projectData['scripts'][$section]);
+        }
+        
+        $this->sourceTextEdit->headerLabel1->text = "<b>$section</b> section";
+        $result = $this->sourceTextEdit->exec();
+        
+        if($result === 1) {
+            $this->projectData['scripts'][$section] = $this->sourceTextEdit->textEdit->plainText;
+        }
+        
+        $this->codegen->updateCode();
     }
     
     public function pqDesignAction($sender, $checked)
@@ -250,9 +501,58 @@ class PQDesigner extends QMainWindow
         }
     }
     
+    public function preSaveProject() {
+        $filename = $this->projectDir . '/main.php';
+        $projectFile = $this->projectDir . '/' . $this->projectName . '.pqproj';
+        
+        if(file_put_contents($filename, $this->codegen->getCode()) === false) {
+            $messagebox = new QMessageBox;
+            $messagebox->warning(0, tr('PQCreator error'),
+                                    sprintf( tr("Cannot write data to file: %1\r\n".
+                                                'Please check that the file is not opened in another application'), 
+                                            $filename )
+                                );
+            $messagebox->free();
+            
+            return false;
+        }
+        
+        $this->saveProjectToFile($projectFile);
+        
+        return true;
+    }
+    
     public function pqSourceAction($sender, $checked)
     {
         if($checked) {
+            /*
+            //TODO: исправить (чтение происходит при каждом клике на кнопку)
+            $unlockSourceEditor = $this->settings->value('designer/unlockSourceEditor', 'notSetYet');
+            
+            if($unlockSourceEditor === 'notSetYet') {
+                $message = new QMessageBox;
+                $answer = $message->information($this, tr("PQCreator Source Editor"), 
+                                    tr("Welcome into the PQCreator SourceEditor!\r\n"
+                                        . "By default, a SourceEditor is locked.\r\n"
+                                        . "If you consider yourself an expert, you can unlock it.\r\n\r\n"
+                                        . "Unlock a SourceEditor?"),
+                                    tr("Yes, I'm EXPERT!"),
+                                    tr("No"));
+                                    
+                if($answer === 0) {
+                    $this->codegen->readOnly = false;
+                }
+                
+                $this->settings->setValue('designer/unlockSourceEditor', $answer);
+                
+                $message->free();
+            }
+            //TODO: исправить 
+            else {
+                $this->codegen->readOnly = $unlockSourceEditor == 1 ? false : true;
+            }
+            */
+        
             $this->designAction->checked = false;
             $this->formareaStack->currentIndex = 1;
             $this->codegen->enableRules();
@@ -265,27 +565,17 @@ class PQDesigner extends QMainWindow
 
     public function pqRunAction($sender, $checked)
     {
-        $filename = $this->projectDir . '/main.php';
-        $exec = $this->projectDir . '/pqengine.exe';
-        if(file_put_contents($filename, $this->codegen->getCode()) === false) {
-            $messagebox = new QMessageBox;
-            $messagebox->warning(0, tr('PQCreator error'),
-                                    sprintf( tr("Cannot write data to file: %1\r\n".
-                                                'Please check that the file is not opened in another application'), 
-                                            $filename )
-                                );
-                                
-            $messagebox->free();
-        }
-        else {
-            $pipes = array();
-            $this->runningProcess = proc_open($exec, array(), $pipes, $this->projectDir);
-            
-            $this->runAction->enabled = false;
-            $this->stopAction->enabled = true;
-            
-            $this->processCheckTimer->start();
-        }
+        if(!$this->preSaveProject()) return;
+        
+        $exec = '"' . $this->projectDir . '/pqengine.exe"';
+        
+        $pipes = array();
+        $this->runningProcess = proc_open($exec, array(), $pipes, $this->projectDir);
+        
+        $this->runAction->enabled = false;
+        $this->stopAction->enabled = true;
+        
+        $this->processCheckTimer->start();
     }
 
     public function pqStopAction($sender, $checked, $status = null)
@@ -332,6 +622,18 @@ class PQDesigner extends QMainWindow
         $this->addDockWidget(Qt::LeftDockWidgetArea, $this->componentsDock);
     }
     
+    public function createHistoryPanel() 
+    {
+        $this->historyTree = new QTreeWidget;
+        $this->historyTree->setHeaderLabels( array( $this->projectName ) );
+        
+        $this->historyDock = new QDockWidget($this);
+        $this->historyDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+        $this->historyDock->setWidget($this->historyTree);
+        
+        $this->addDockWidget(Qt::LeftDockWidgetArea, $this->historyDock);
+    }
+    
     public function loadComponents()
     {
         $componentsPath = $this->componentsPath;
@@ -347,8 +649,6 @@ class PQDesigner extends QMainWindow
                 closedir($dh);
             }
         }
-        
-       // $this->componentsLayout->addSpacer(0, 5000, QSizePolicy::Preferred, QSizePolicy::Expanding);
     }
     
     public function createButton($component)
@@ -483,7 +783,6 @@ class PQDesigner extends QMainWindow
         $obj->parentClass = $sender->parentClass;
         $obj->move($globalX, $globalY);
         $obj->windowOpacity = 0.6;
-       // $obj->lockParentClassEvents = true;
         $obj->defaultPropertiesLoaded = false;
         $obj->draggable = true;
         
@@ -522,6 +821,13 @@ class PQDesigner extends QMainWindow
         $objDataArr['properties'][] = 'y';
         $objDataArr['properties'][] = 'width';
         $objDataArr['properties'][] = 'height';
+        
+        if($obj->__pq_r_ex_enabled_ === true) {
+            if($type == 'QWidget'
+            || $type == 'QMainWindow') {
+                $objDataArr['properties'][] = 'windowTitle';
+            }
+        }
         
         $objData = new ArrayObject($objDataArr, ArrayObject::ARRAY_AS_PROPS);
         
@@ -571,6 +877,12 @@ class PQDesigner extends QMainWindow
             $obj->move($newObjX, $newObjY);
             $obj->show();
             
+            $component = get_class($obj);
+            if($component == 'QTextEdit'
+                || $component == 'QPlainTextEdit') {
+                $obj->setTextInteractionFlags(Qt::NoTextInteraction);
+            }
+            
             if (!$obj->defaultPropertiesLoaded) {
                 $obj->isDynObject = true;
                 $objectName = $obj->objectName;
@@ -579,6 +891,23 @@ class PQDesigner extends QMainWindow
                 
                 $this->objectList->addItem($objectName, $icon);
                 $this->objectList->currentIndex = $this->objectList->count() - 1;
+                
+                $this->projectData['history'][] = array('action' => 'create',
+                                                        'component' => $component,
+                                                        'object' => $obj,
+                                                        'x' => $newObjX,
+                                                        'y' => $newObjY);
+                                                        
+                $rootItemIndex = $this->historyTree->addRootItem($obj->objectName, $this->iconsPath . '/add.png');
+            }
+            else {
+                $this->projectData['history'][] = array('action' => 'move',
+                                                        'component' => $component,
+                                                        'object' => $obj,
+                                                        'x' => $newObjX,
+                                                        'y' => $newObjY);
+                                                        
+                $rootItemIndex = $this->historyTree->addRootItem($obj->objectName, $this->iconsPath . '/move.png');
             }
 
             $this->codegen->updateCode(); 
@@ -834,12 +1163,26 @@ class PQDesigner extends QMainWindow
 
     public function raiseObject($sender, $bool)
     {
-        c($sender->__pq_objectName_)->raise();
+        $obj = c($sender->__pq_objectName_);
+        $obj->raise();
+        
+        $this->projectData['history'][] = array('action' => 'raise',
+                                                'component' => get_class($obj),
+                                                'object' => $obj);
+        
+        $this->historyTree->addRootItem($sender->__pq_objectName_, c(PQNAME)->qticonsPath . '/editraise.png');
     }
 
     public function lowerObject($sender, $bool)
     {
-        c($sender->__pq_objectName_)->lower();
+        $obj = c($sender->__pq_objectName_);
+        $obj->lower();
+        
+        $this->projectData['history'][] = array('action' => 'raise',
+                                                'component' => get_class($obj),
+                                                'object' => $obj);
+        
+        $this->historyTree->addRootItem($sender->__pq_objectName_,c(PQNAME)->qticonsPath . '/editlower.png');
     }
     
     function format_params($params) {
@@ -874,7 +1217,7 @@ class PQDesigner extends QMainWindow
         $this->sourceTextEdit->textEdit->clear();
         
         if(isset($this->objHash[$objectName]->events[$eventName])) {
-            $this->sourceTextEdit->textEdit->plainText = $this->objHash[$objectName]->events[$eventName]['code'];
+            $this->sourceTextEdit->textEdit->setPlainText($this->objHash[$objectName]->events[$eventName]['code']);
         }
         
         $this->sourceTextEdit->headerLabel1->text = "<b>$eventName</b>( $args ) {";
@@ -1017,6 +1360,8 @@ class PQDesigner extends QMainWindow
                 $this->deleteObject($childObject);
             }
         }
+        
+        $this->historyTree->addRootItem($object->objectName, $this->iconsPath . '/remove.png');
 
         $this->unselectObject();
         $objectName = $object->objectName;
@@ -1024,6 +1369,7 @@ class PQDesigner extends QMainWindow
         $this->objectList->removeItem($this->objectList->itemIndex($objectName));
         $object->free();
         $this->codegen->updateCode();
+        
     }
 
     

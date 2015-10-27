@@ -240,7 +240,7 @@ class PQTabWidget extends QWidget
         
         $widget->resize(300,300);
         $widget->isFormAreaWidget = true;
-        $widget->tabIndex = $index;
+        $widget->tabIndex = $index-1;
         
         $stack = new QStackedWidget($stackArea);
         $stack->objectName = '___pq_creator__pqtabwidget_stackarea_stack_';
@@ -257,6 +257,11 @@ class PQTabWidget extends QWidget
         $stackArea->setLayout($stackArea_layout);
         
         $this->stack->addWidget($stackArea);
+        
+        if($index > 1) { // 26.09.2015
+            $this->tabbar->moveTab($index, $index-1);
+            $this->tabbar->currentIndex = $index-1;
+        }
     }
 
     public function setActiveStackIndex($sender, $index)
@@ -265,14 +270,14 @@ class PQTabWidget extends QWidget
         
         if ($index == $tabCount-1) {
             $widget = new QWidget;
-            $widget->objectName = '___pq_formwidget__centralwidget_form';// . $tabCount;
+            $widget->objectName = '___pq_formwidget__centralwidget_form';
             $windowTitle = "Form " . $tabCount;
             
             $this->tabbar->currentIndex = 0;
             $null = null;
             $this->addTab($widget, $null, $windowTitle);
-            $this->tabbar->moveTab($tabCount, $index);
-            $this->tabbar->currentIndex = $index;
+            //$this->tabbar->moveTab($tabCount, $index); // 26.09.2015
+            //$this->tabbar->currentIndex = $index; // 26.09.2015
             
             $widget->tabIndex = $index;
             
