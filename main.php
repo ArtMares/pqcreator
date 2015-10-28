@@ -1,12 +1,15 @@
 <?php
 
-function ___pq_prepare_path_to_win($path) {
-  return str_replace('/', '\\', $path); // windows path
+function preparePath($path) {
+    return stristr(strtolower(PHP_OS), 'win') ? str_replace('/', '\\', $path) : str_replace('\\', '/', $path);
 }
-
-function ___pq_prepare_path($winpath) {
-  return str_replace('\\', '/', $winpath); // normal path
-}
+//function ___pq_prepare_path_to_win($path) {
+//  return str_replace('/', '\\', $path); // windows path
+//}
+//
+//function ___pq_prepare_path($winpath) {
+//  return str_replace('\\', '/', $winpath); // normal path
+//}
 
 DEFINE('PQNAME', '___pq_creator_');
 
@@ -16,7 +19,7 @@ require_once('core/design/PQDesigner.php');
 require_once('core/design/PQDownloader.php');
 require_once('core/design/ProjectsWindow.php');
 require_once('core/logo/PQCreatorLogo.php');
-require_once('core/pqpack/PQBuilder.php');
+//require_once('core/pqpack/PQBuilder.php');
 
 class PQCreator extends QObject {
     private $projects;
@@ -43,7 +46,10 @@ class PQCreator extends QObject {
         
         $this->init();
     }
-    
+
+    /**
+     * Метод init() - Инициализирует основной класс IDE
+     */
     private function init() {
         $this->projects = new ProjectsWindow;
     }
