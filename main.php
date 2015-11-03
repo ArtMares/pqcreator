@@ -3,13 +3,13 @@
 function preparePath($path) {
     return stristr(strtolower(PHP_OS), 'win') ? str_replace('/', '\\', $path) : str_replace('\\', '/', $path);
 }
-//function ___pq_prepare_path_to_win($path) {
-//  return str_replace('/', '\\', $path); // windows path
-//}
-//
-//function ___pq_prepare_path($winpath) {
-//  return str_replace('\\', '/', $winpath); // normal path
-//}
+function ___pq_prepare_path_to_win($path) {
+  return str_replace('/', '\\', $path); // windows path
+}
+
+function ___pq_prepare_path($winpath) {
+  return str_replace('\\', '/', $winpath); // normal path
+}
 
 DEFINE('PQNAME', '___pq_creator_');
 
@@ -30,7 +30,7 @@ class PQCreator extends QObject {
         $this->objectName = PQNAME;
         
         $this->currentPath = QDir::CurrentPath;
-        
+
         $this->iconsPath = $this->currentPath . '/core/design/faenza-icons';
         $this->qticonsPath = $this->currentPath . '/core/design/qt-icons';
         //$this->pqpackPath = ___pq_prepare_path(getenv("PROGRAMFILES")) . '/PQPack';

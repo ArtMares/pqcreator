@@ -126,7 +126,7 @@ class ProjectsWindow extends QWidget {
             return false;
         }
     
-        $this->projectDir = ___pq_prepare_path($projectDir);
+        $this->projectDir = preparePath($projectDir);
         return true;
     }
 
@@ -149,7 +149,7 @@ class ProjectsWindow extends QWidget {
                 return false;
             }
       
-        $this->user_projects_path = ___pq_prepare_path_to_win($def_dir);
+        $this->user_projects_path = preparePath($def_dir);
         }
     
         return $this->user_projects_path;
